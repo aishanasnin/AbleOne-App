@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "174424108823",
+    "project_id": "ableone-89257",
+    "storage_bucket": "ableone-89257.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:174424108823:android:49c9dd0c8a50ae4145d152",
+        "android_client_info": {
+          "package_name": "com.example.ableone_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAdN-sGOURlgXtUZ4S3FaVhpyOkZ6Uc0UA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
