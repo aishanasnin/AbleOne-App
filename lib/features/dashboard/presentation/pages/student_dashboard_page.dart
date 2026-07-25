@@ -615,7 +615,9 @@ class _StudentDashboardPageState extends ConsumerState<StudentDashboardPage> {
             leading: const Icon(Icons.accessibility_rounded, color: AppColors.primary),
             title: const Text('Accessibility Settings'),
             trailing: const Icon(Icons.chevron_right_rounded),
-            onTap: () {},
+            onTap: () {
+              context.push(RouteNames.profilePagePath);
+            },
           ),
           ListTile(
             leading: const Icon(Icons.settings_rounded, color: AppColors.primary),

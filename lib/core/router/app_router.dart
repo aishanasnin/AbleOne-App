@@ -19,6 +19,9 @@ import 'package:ableone_app/features/learning/presentation/pages/progress_page.d
 import 'package:ableone_app/features/ai/presentation/pages/ai_home_page.dart';
 import 'package:ableone_app/features/ai/presentation/pages/ai_chat_page.dart';
 import 'package:ableone_app/features/ai/presentation/pages/ai_chat_history_page.dart';
+import 'package:ableone_app/features/profile/presentation/pages/profile_page.dart';
+import 'package:ableone_app/features/profile/presentation/pages/accessibility_setup_page.dart';
+import 'package:ableone_app/features/profile/presentation/pages/learning_preference_page.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
@@ -127,6 +130,27 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         name: RouteNames.aiHistory,
         path: RouteNames.aiHistoryPath,
         builder: (context, state) => const AIChatHistoryPage(),
+      ),
+      GoRoute(
+        name: RouteNames.profilePage,
+        path: RouteNames.profilePagePath,
+        builder: (context, state) => const ProfilePage(),
+      ),
+      GoRoute(
+        name: RouteNames.accessibilitySetup,
+        path: RouteNames.accessibilitySetupPath,
+        builder: (context, state) {
+          final initialNeeds = state.extra as List<String>? ?? const [];
+          return AccessibilitySetupPage(initialNeeds: initialNeeds);
+        },
+      ),
+      GoRoute(
+        name: RouteNames.learningPreference,
+        path: RouteNames.learningPreferencePath,
+        builder: (context, state) {
+          final supportNeeds = state.extra as List<String>? ?? const [];
+          return LearningPreferencePage(supportNeeds: supportNeeds);
+        },
       ),
     ],
     errorBuilder: (context, state) => Scaffold(

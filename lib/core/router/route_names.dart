@@ -49,4 +49,13 @@ class RouteNames {
 
   static const String aiHistory = 'aiHistory';
   static const String aiHistoryPath = '/ai/history';
+
+  static const String profilePage = 'profilePage';
+  static const String profilePagePath = '/profile';
+
+  static const String accessibilitySetup = 'accessibilitySetup';
+  static const String accessibilitySetupPath = '/profile/accessibility-setup';
+
+  static const String learningPreference = 'learningPreference';
+  static const String learningPreferencePath = '/profile/learning-preference';
 }
