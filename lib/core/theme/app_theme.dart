@@ -242,4 +242,57 @@ class AppTheme {
       ),
     );
   }
+
+  static ThemeData get darkTheme {
+    return ThemeData(
+      useMaterial3: true,
+      brightness: Brightness.dark,
+      primaryColor: AppColors.primary,
+      scaffoldBackgroundColor: const Color(0xFF0F172A),
+      colorScheme: const ColorScheme.dark(
+        primary: AppColors.primary,
+        onPrimary: Colors.white,
+        primaryContainer: AppColors.primaryDark,
+        secondary: AppColors.secondary,
+        onSecondary: Colors.white,
+        surface: Color(0xFF1E293B),
+        onSurface: Colors.white,
+        error: AppColors.error,
+        onError: Colors.white,
+        outline: Color(0xFF334155),
+      ),
+      fontFamily: AppTypography.fontFamily,
+      textTheme: const TextTheme(
+        displayLarge: AppTypography.displayLarge,
+        headlineMedium: AppTypography.headlineMedium,
+        titleLarge: AppTypography.titleLarge,
+        titleMedium: AppTypography.titleMedium,
+        bodyLarge: AppTypography.bodyLarge,
+        bodyMedium: AppTypography.bodyMedium,
+        labelLarge: AppTypography.labelLarge,
+        labelMedium: AppTypography.labelMedium,
+      ),
+      appBarTheme: const AppBarTheme(
+        backgroundColor: Color(0xFF1E293B),
+        foregroundColor: Colors.white,
+        elevation: 0,
+        centerTitle: true,
+        titleTextStyle: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
+        iconTheme: IconThemeData(color: Colors.white),
+      ),
+      cardTheme: const CardThemeData(
+        color: Color(0xFF1E293B),
+        elevation: 0,
+        margin: EdgeInsets.zero,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(AppConstants.radiusLg)),
+          side: BorderSide(color: Color(0xFF334155), width: 1),
+        ),
+      ),
+      dividerTheme: const DividerThemeData(
+        color: Color(0xFF334155),
+        thickness: 1,
+      ),
+    );
+  }
 }

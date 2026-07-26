@@ -5,9 +5,13 @@ import 'package:ableone_app/core/theme/app_colors.dart';
 import 'package:ableone_app/core/router/route_names.dart';
 import 'package:ableone_app/core/constants/app_constants.dart';
 import 'package:ableone_app/shared/widgets/dashboard_card.dart';
-import 'package:ableone_app/shared/widgets/stat_card.dart';
 import 'package:ableone_app/shared/widgets/section_title.dart';
 import 'package:ableone_app/features/authentication/data/repositories/authentication_repository_impl.dart';
+import 'package:ableone_app/shared/widgets/premium_widgets.dart';
+import 'package:ableone_app/features/admin/data/repositories/admin_repository_impl.dart';
+import 'package:ableone_app/features/admin/presentation/widgets/admin_widgets.dart';
+import 'package:ableone_app/features/admin/presentation/pages/admin_users_list_page.dart';
+import 'package:ableone_app/features/admin/presentation/pages/admin_course_list_page.dart';
 
 class AdminDashboardPage extends ConsumerStatefulWidget {
   const AdminDashboardPage({super.key});
@@ -19,7 +23,7 @@ class AdminDashboardPage extends ConsumerStatefulWidget {
 class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
   int _currentIndex = 0;
 
-  final List<String> _titles = ['System Registry', 'System Diagnostics', 'Feature Configuration', 'Admin Profile'];
+  final List<String> _titles = ['System Directory', 'Analytics Board', 'Workspaces Config', 'Admin Profile'];
 
   @override
   Widget build(BuildContext context) {
@@ -90,127 +94,144 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
   }
 
   Widget _buildDirectoryTab(ThemeData theme, bool isDesktop, bool isTablet) {
-    final gridCount = isDesktop ? 3 : (isTablet ? 3 : 1);
+    final statsAsync = ref.watch(adminStatsProvider);
+    final gridCount = isDesktop ? 4 : (isTablet ? 2 : 1);
 
     return ListView(
       padding: const EdgeInsets.all(AppConstants.lg),
       children: [
-        // Welcome Header card
-        Card(
-          color: Colors.red.withValues(alpha: 0.08),
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppConstants.radiusXl),
-            side: const BorderSide(color: Colors.red, width: 0.5),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(AppConstants.lg),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Semantics(
-                  header: true,
-                  child: Text(
-                    'Hello, Admin! 🛡️',
-                    style: theme.textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.red,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: AppConstants.xs),
-                Text(
-                  'Manage system workspaces, approve counselor registration, and review access logs.',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-              ],
-            ),
-          ),
+        ProfileHeader(
+          name: 'Hello, Admin! 🛡️',
+          description: 'Manage system registries, review clinical updates, and configure workflows.',
+          streakDays: 0,
         ),
-        const SizedBox(height: AppConstants.lg),
+        const SizedBox(height: AppConstants.md),
 
-        const SectionTitle(title: 'Total System Registry'),
+        const SectionTitle(title: 'Overview Metrics'),
         const SizedBox(height: AppConstants.sm),
 
-        GridView.count(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          crossAxisCount: gridCount,
-          crossAxisSpacing: AppConstants.md,
-          mainAxisSpacing: AppConstants.md,
-          childAspectRatio: isDesktop ? 1.5 : 1.3,
-          children: const [
-            StatCard(
-              label: 'Students',
-              value: '240',
-              icon: Icons.school_rounded,
-              color: Colors.indigo,
-            ),
-            StatCard(
-              label: 'Counselors',
-              value: '42',
-              icon: Icons.psychology_rounded,
-              color: Colors.orange,
-            ),
-            StatCard(
-              label: 'Parents',
-              value: '180',
-              icon: Icons.family_restroom_rounded,
-              color: Colors.green,
-            ),
-          ],
+        statsAsync.when(
+          data: (stats) {
+            return GridView.count(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              crossAxisCount: gridCount,
+              crossAxisSpacing: AppConstants.md,
+              mainAxisSpacing: AppConstants.md,
+              childAspectRatio: isDesktop ? 1.4 : 1.6,
+              children: [
+                AnalyticsCard(
+                  title: 'Total Users',
+                  value: '${stats.totalUsers}',
+                  icon: Icons.people_rounded,
+                  color: AppColors.primary,
+                  subtitle: '+12% from last month',
+                ),
+                AnalyticsCard(
+                  title: 'Active Students',
+                  value: '${stats.totalStudents}',
+                  icon: Icons.school_rounded,
+                  color: AppColors.secondary,
+                  subtitle: '92% completion rate',
+                ),
+                AnalyticsCard(
+                  title: 'AI Conversations',
+                  value: '${stats.aiInteractions}',
+                  icon: Icons.smart_toy_rounded,
+                  color: AppColors.accent,
+                  subtitle: 'Average 12 messages/session',
+                ),
+                AnalyticsCard(
+                  title: 'Completed Lessons',
+                  value: '${stats.lessonsCompleted}',
+                  icon: Icons.assignment_turned_in_rounded,
+                  color: Colors.green,
+                  subtitle: '+45 completed today',
+                ),
+              ],
+            );
+          },
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (err, _) => Center(child: Text('Error loading stats: $err')),
         ),
         const SizedBox(height: AppConstants.lg),
+
+        const SectionTitle(title: 'Platform Management Options'),
+        const SizedBox(height: AppConstants.sm),
+
+        DashboardCard(
+          title: 'Users & Diagnostics Directory',
+          subtitle: 'Approve counselors, modify child profiles, and view linked parents',
+          icon: Icons.manage_accounts_rounded,
+          color: AppColors.primary,
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute<void>(
+                builder: (context) => const AdminUsersListPage(),
+              ),
+            );
+          },
+        ),
+        DashboardCard(
+          title: 'Course & Content Configuration',
+          subtitle: 'Verify curriculum paths, outline lesson modules, and review completion rates',
+          icon: Icons.collections_bookmark_rounded,
+          color: AppColors.secondary,
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute<void>(
+                builder: (context) => const AdminCourseListPage(),
+              ),
+            );
+          },
+        ),
       ],
     );
   }
 
   Widget _buildAnalyticsTab(ThemeData theme, bool isDesktop, bool isTablet) {
-    final gridCount = isDesktop ? 3 : (isTablet ? 2 : 1);
+    final gridCount = isDesktop ? 2 : 1;
 
     return ListView(
       padding: const EdgeInsets.all(AppConstants.lg),
       children: [
-        const SectionTitle(title: 'Diagnostic System Metrics'),
-        const SizedBox(height: AppConstants.lg),
-        
+        const SectionTitle(title: 'Diagnostic Analytics Board'),
+        const SizedBox(height: AppConstants.md),
+
         GridView.count(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           crossAxisCount: gridCount,
           crossAxisSpacing: AppConstants.md,
           mainAxisSpacing: AppConstants.md,
-          childAspectRatio: isDesktop ? 1.4 : 1.6,
-          children: [
-            _buildMetricCard('Active Sessions today', '48 sessions', 0.8, Colors.green),
-            _buildMetricCard('Database Storage', '14.2 GB of 100 GB', 0.14, Colors.blue),
-            _buildMetricCard('API Endpoint Health', '99.98% Uptime', 0.99, Colors.teal),
+          childAspectRatio: isDesktop ? 1.55 : 1.35,
+          children: const [
+            ChartCard(
+              title: 'Registered User Growth Trend',
+              subtitle: 'Accumulated registered platform users (March - July)',
+              color: AppColors.primary,
+              labels: ['Mar', 'Apr', 'May', 'Jun', 'Jul'],
+              values: [35, 58, 82, 110, 142],
+            ),
+            ChartCard(
+              title: 'Completed Lessons By Month',
+              subtitle: 'Solved diagnostic modules and Attentiveness tasks',
+              color: AppColors.secondary,
+              labels: ['Mar', 'Apr', 'May', 'Jun', 'Jul'],
+              values: [95, 180, 260, 340, 412],
+            ),
+            ChartCard(
+              title: 'Accessibility Toggles Usage',
+              subtitle: 'Total active toggles configured in settings profiles',
+              color: AppColors.accent,
+              labels: ['Visual', 'Audio', 'Cognit.', 'Physic.', 'Autism'],
+              values: [42, 28, 55, 15, 34],
+            ),
           ],
         ),
       ],
-    );
-  }
-
-  Widget _buildMetricCard(String label, String value, double progress, Color color) {
-    return DashboardCard(
-      title: label,
-      subtitle: value,
-      icon: Icons.bar_chart_rounded,
-      color: color,
-      content: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SizedBox(height: 8),
-          LinearProgressIndicator(
-            value: progress,
-            backgroundColor: AppColors.border,
-            valueColor: AlwaysStoppedAnimation<Color>(color),
-            minHeight: 6,
-          ),
-        ],
-      ),
     );
   }
 

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:ableone_app/core/theme/app_colors.dart';
 import 'package:ableone_app/core/constants/app_constants.dart';
 import 'package:ableone_app/shared/widgets/section_title.dart';
 import 'package:ableone_app/features/counselor/data/repositories/counselor_repository_impl.dart';
 import 'package:ableone_app/features/counselor/presentation/widgets/student_card.dart';
 import 'package:ableone_app/features/counselor/presentation/pages/student_detail_page.dart';
+import 'package:ableone_app/shared/widgets/premium_widgets.dart';
 
 /// Screen listing assigned child student registry cases with simple list views.
 class StudentListPage extends ConsumerWidget {
@@ -14,7 +14,6 @@ class StudentListPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
     final studentsAsync = ref.watch(counselorStudentsProvider);
     final size = MediaQuery.of(context).size;
     final isDesktop = size.width > 900;
@@ -24,41 +23,12 @@ class StudentListPage extends ConsumerWidget {
     return ListView(
       padding: const EdgeInsets.all(AppConstants.lg),
       children: [
-        // Welcome Header card
-        Card(
-          color: AppColors.accent.withValues(alpha: 0.08),
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppConstants.radiusXl),
-            side: const BorderSide(color: AppColors.accent, width: 0.5),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(AppConstants.lg),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Semantics(
-                  header: true,
-                  child: Text(
-                    'Hello, Counselor! 🧠',
-                    style: theme.textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.accentDark,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: AppConstants.xs),
-                Text(
-                  'Evaluate diagnostic assessments, manage counseling cases, and update therapy plans.',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-              ],
-            ),
-          ),
+        ProfileHeader(
+          name: 'Hello, Counselor! 🧠',
+          description: 'Evaluate diagnostic assessments, manage cases, and update therapy plans.',
+          streakDays: 0,
         ),
-        const SizedBox(height: AppConstants.lg),
+        const SizedBox(height: AppConstants.md),
 
         const SectionTitle(title: 'Active Patient Register'),
         const SizedBox(height: AppConstants.sm),

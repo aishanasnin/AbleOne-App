@@ -14,6 +14,7 @@ import 'package:ableone_app/features/parent/presentation/widgets/progress_card.d
 import 'package:ableone_app/features/parent/presentation/widgets/activity_card.dart';
 import 'package:ableone_app/features/parent/presentation/widgets/insight_card.dart';
 import 'package:ableone_app/features/accessibility/presentation/pages/accessibility_controls_page.dart';
+import 'package:ableone_app/shared/widgets/premium_widgets.dart';
 
 /// Parent portal dashboard providing streaks, completed lessons, counselor updates, and AI recommendations.
 class ParentDashboardPage extends ConsumerStatefulWidget {
@@ -115,47 +116,12 @@ class _ParentDashboardPageState extends ConsumerState<ParentDashboardPage> {
     return ListView(
       padding: const EdgeInsets.all(AppConstants.lg),
       children: [
-        // Welcome Header card
-        Card(
-          color: AppColors.secondary.withValues(alpha: 0.08),
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppConstants.radiusXl),
-            side: const BorderSide(color: AppColors.secondary, width: 0.5),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(AppConstants.lg),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Semantics(
-                        header: true,
-                        child: Text(
-                          'Hello, Parent! 👪',
-                          style: theme.textTheme.headlineMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.secondaryDark,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: AppConstants.xs),
-                      Text(
-                        'Track your child\'s learning and review diagnostic feedback from their counselor.',
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
+        ProfileHeader(
+          name: 'Hello, Parent! 👪',
+          description: 'Track your child\'s learning and review diagnostic feedback.',
+          streakDays: progressAsync.value?.streak ?? 0,
         ),
-        const SizedBox(height: AppConstants.lg),
+        const SizedBox(height: AppConstants.md),
 
         const SectionTitle(title: 'Child Profile & Progress'),
         const SizedBox(height: AppConstants.sm),

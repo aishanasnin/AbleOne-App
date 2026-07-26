@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:ableone_app/core/theme/app_colors.dart';
 
 class AppTypography {
-  static const String fontFamily = 'Poppins';
+  static const String? fontFamily = null;
 
   static const TextStyle displayLarge = TextStyle(
     fontFamily: fontFamily,

@@ -12,6 +12,7 @@ import 'package:ableone_app/features/learning/data/repositories/course_repositor
 import 'package:ableone_app/features/learning/domain/entities/course_entity.dart';
 import 'package:ableone_app/core/services/firebase_service.dart';
 import 'package:ableone_app/features/profile/presentation/providers/profile_providers.dart';
+import 'package:ableone_app/shared/widgets/premium_widgets.dart';
 
 /// The main dashboard screen for student users, featuring quick access tabs
 /// for course overview, lesson paths, therapy schedules, and user preference profiles.
@@ -108,94 +109,83 @@ class _StudentDashboardPageState extends ConsumerState<StudentDashboardPage> {
     final profile = ref.watch(userProfileProvider);
     final greetingName = profile?.name ?? ref.watch(firebaseAuthProvider).currentUser?.displayName ?? 'Student';
 
+    int streak = 0;
+    if (uid != null) {
+      final progressAsync = ref.watch(userProgressProvider(ProgressParam(uid: uid, courseId: 'c1')));
+      progressAsync.whenData((progress) {
+        if (progress != null) {
+          streak = progress.streak;
+        }
+      });
+    }
+
     return ListView(
       padding: const EdgeInsets.all(AppConstants.lg),
       children: [
-        // Welcome Header card
-        Card(
-          color: AppColors.primary.withValues(alpha: 0.08),
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppConstants.radiusXl),
-            side: const BorderSide(color: AppColors.primaryLight, width: 0.5),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(AppConstants.lg),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Semantics(
-                        header: true,
-                        child: Text(
-                          'Hello, $greetingName! 👋',
-                          style: theme.textTheme.headlineMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.primaryDark,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: AppConstants.xs),
-                      Text(
-                        'Ready to continue your personalized learning journey today?',
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: AppConstants.md),
-                const Icon(
-                  Icons.stars_rounded,
-                  color: AppColors.accent,
-                  size: 48,
-                ),
-              ],
-            ),
-          ),
+        // Welcome Header & Streak Section
+        ProfileHeader(
+          name: greetingName,
+          description: 'Level: ${profile?.learningLevel ?? 'Beginner'} • style: ${profile?.learningPreference ?? 'Simple explanations'}',
+          streakDays: streak,
         ),
-        const SizedBox(height: AppConstants.lg),
+        const SizedBox(height: AppConstants.md),
 
         // ACTIVE LEARNING MODE
         const SectionTitle(title: 'Active Learning Mode'),
         const SizedBox(height: AppConstants.sm),
-        DashboardCard(
-          title: 'Personalized Profile Settings',
-          subtitle: 'Level: ${profile?.learningLevel ?? 'Beginner'} • Style: ${profile?.learningPreference ?? 'Simple explanations'}',
-          icon: Icons.accessibility_new_rounded,
-          color: AppColors.secondary,
-          onTap: () {
+        AnimatedButton(
+          onPressed: () {
             context.push(RouteNames.profilePagePath);
           },
-          content: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: AppConstants.xs),
-              Wrap(
-                spacing: AppConstants.sm,
-                runSpacing: AppConstants.xs,
-                children: (profile?.supportNeeds ?? const []).isEmpty
-                    ? [
-                        Chip(
-                          label: const Text('No specific support needs', style: TextStyle(fontSize: 12)),
-                          avatar: const Icon(Icons.check_circle_outline_rounded, size: 14, color: AppColors.secondary),
-                          backgroundColor: AppColors.secondary.withValues(alpha: 0.05),
-                          side: BorderSide.none,
-                        )
-                      ]
-                    : (profile?.supportNeeds ?? const []).map((need) {
-                        return Chip(
-                          label: Text(need, style: const TextStyle(fontSize: 12)),
-                          avatar: Icon(_getSupportIcon(need), size: 14, color: AppColors.secondary),
-                          backgroundColor: AppColors.secondary.withValues(alpha: 0.05),
-                          side: BorderSide.none,
-                        );
-                      }).toList(),
-              ),
-            ],
+          child: GlassCard(
+            color: AppColors.secondary.withValues(alpha: 0.05),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.accessibility_new_rounded, color: AppColors.secondary, size: 24),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Personalized Profile Settings',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppConstants.xs),
+                Text(
+                  'Level: ${profile?.learningLevel ?? 'Beginner'} • Style: ${profile?.learningPreference ?? 'Simple explanations'}',
+                  style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
+                ),
+                const SizedBox(height: AppConstants.sm),
+                Wrap(
+                  spacing: AppConstants.sm,
+                  runSpacing: AppConstants.xs,
+                  children: (profile?.supportNeeds ?? const []).isEmpty
+                      ? [
+                          Chip(
+                            label: const Text('No specific support needs', style: TextStyle(fontSize: 12)),
+                            avatar: const Icon(Icons.check_circle_outline_rounded, size: 14, color: AppColors.secondary),
+                            backgroundColor: AppColors.secondary.withValues(alpha: 0.05),
+                            side: BorderSide.none,
+                          )
+                        ]
+                      : (profile?.supportNeeds ?? const []).map((need) {
+                          return Chip(
+                            label: Text(need, style: const TextStyle(fontSize: 12)),
+                            avatar: Icon(_getSupportIcon(need), size: 14, color: AppColors.secondary),
+                            backgroundColor: AppColors.secondary.withValues(alpha: 0.05),
+                            side: BorderSide.none,
+                          );
+                        }).toList(),
+                ),
+              ],
+            ),
           ),
         ),
         const SizedBox(height: AppConstants.lg),
@@ -241,25 +231,46 @@ class _StudentDashboardPageState extends ConsumerState<StudentDashboardPage> {
         defaultCourseProgressAsync.maybeWhen(
           data: (progress) {
             final percent = progress?.completionPercentage ?? 0.0;
-            return DashboardCard(
-              title: 'Introduction to Sight Words',
-              subtitle: 'Module 1 • ${percent.toInt()}% Complete',
-              icon: Icons.play_arrow_rounded,
-              color: AppColors.primary,
-              onTap: () {
+            return AnimatedButton(
+              onPressed: () {
                 context.push(RouteNames.courseDetailsPath.replaceAll(':courseId', 'c1'));
               },
-              content: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: AppConstants.xs),
-                  LinearProgressIndicator(
-                    value: percent / 100.0,
-                    backgroundColor: AppColors.border,
-                    valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
-                    minHeight: 6,
-                  ),
-                ],
+              child: GradientCard(
+                colors: const [AppColors.primary, AppColors.primaryLight],
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Introduction to Sight Words',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Module 1 • ${percent.toInt()}% Complete',
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.9),
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    ProgressRing(
+                      value: percent / 100.0,
+                      size: 54,
+                      strokeWidth: 4,
+                      color: Colors.white,
+                    ),
+                  ],
+                ),
               ),
             );
           },
@@ -373,7 +384,6 @@ class _StudentDashboardPageState extends ConsumerState<StudentDashboardPage> {
     int streak = 0;
 
     if (uid != null) {
-      // Fetch progress aggregates for Course 1
       final progressAsync = ref.watch(userProgressProvider(ProgressParam(uid: uid, courseId: 'c1')));
       progressAsync.whenData((progress) {
         if (progress != null) {
@@ -419,7 +429,6 @@ class _StudentDashboardPageState extends ConsumerState<StudentDashboardPage> {
   ) {
     return coursesAsync.when(
       data: (courses) {
-        // Show courses 2 and 3 as recommendations
         final recs = courses.where((c) => c.id != 'c1').toList();
 
         if (recs.isEmpty) {
@@ -617,9 +626,9 @@ class _StudentDashboardPageState extends ConsumerState<StudentDashboardPage> {
     return ListView(
       padding: const EdgeInsets.all(AppConstants.lg),
       children: [
-        const SectionTitle(title: 'Therapy Plan Routine'),
+        const SectionTitle(title: 'Therapy Routine Path'),
         const Text(
-          'Weekly exercises assigned by your counselor.',
+          'Weekly cognitive and emotional exercises assigned by your counselor.',
           style: TextStyle(color: AppColors.textSecondary),
         ),
         const SizedBox(height: AppConstants.lg),

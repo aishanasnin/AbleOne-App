@@ -17,6 +17,7 @@ class AbleOneApp extends ConsumerWidget {
       title: AppConfig.appName,
       debugShowCheckedModeBanner: false,
       theme: accessSettings.highContrastMode ? AppTheme.highContrastTheme : AppTheme.lightTheme,
+      darkTheme: accessSettings.highContrastMode ? AppTheme.highContrastTheme : AppTheme.darkTheme,
       routerConfig: router,
     );
   }

@@ -236,15 +236,15 @@ class _AIChatPageState extends ConsumerState<AIChatPage> {
                 ),
               ),
 
-            // Quick action chips if a lesson is active
-            if (activeLesson != null)
-              Container(
-                height: 48,
-                padding: const EdgeInsets.symmetric(vertical: 4),
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: AppConstants.lg),
-                  children: [
+            // Suggested prompt pills
+            Container(
+              height: 48,
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: AppConstants.lg),
+                children: [
+                  if (activeLesson != null) ...[
                     _buildQuickActionChip(
                       label: 'Explain this lesson',
                       icon: Icons.psychology_outlined,
@@ -256,7 +256,7 @@ class _AIChatPageState extends ConsumerState<AIChatPage> {
                     ),
                     const SizedBox(width: AppConstants.sm),
                     _buildQuickActionChip(
-                      label: 'Summarize this lesson',
+                      label: 'Summarize key points',
                       icon: Icons.summarize_outlined,
                       onPressed: () {
                         ref.read(chatMessagesProvider.notifier).sendMessage(
@@ -265,30 +265,42 @@ class _AIChatPageState extends ConsumerState<AIChatPage> {
                       },
                     ),
                     const SizedBox(width: AppConstants.sm),
+                  ] else ...[
                     _buildQuickActionChip(
-                      label: 'Create practice questions',
+                      label: 'Quiz me on sight words',
                       icon: Icons.quiz_outlined,
                       onPressed: () {
                         ref.read(chatMessagesProvider.notifier).sendMessage(
-                          'Create a few practice questions with multiple choice options for the lesson "${activeLesson.title}".',
+                          'Give me a short quiz on primary sight words.',
                         );
                       },
                     ),
                     const SizedBox(width: AppConstants.sm),
                     _buildQuickActionChip(
-                      label: 'Give examples',
-                      icon: Icons.lightbulb_outline_rounded,
+                      label: 'Explain photosynthesis',
+                      icon: Icons.psychology_rounded,
                       onPressed: () {
                         ref.read(chatMessagesProvider.notifier).sendMessage(
-                          'Give real-world examples to help understand "${activeLesson.title}".',
+                          'Can you explain what photosynthesis is in simple terms?',
                         );
                       },
                     ),
+                    const SizedBox(width: AppConstants.sm),
                   ],
-                ),
+                  _buildQuickActionChip(
+                    label: 'Practice numbers',
+                    icon: Icons.calculate_outlined,
+                    onPressed: () {
+                      ref.read(chatMessagesProvider.notifier).sendMessage(
+                        'Give me a simple math number patterns exercise.',
+                      );
+                    },
+                  ),
+                ],
               ),
+            ),
 
-            // Input controller footer panel
+            // Input controller footer panel with attachments and voice record
             Container(
               padding: const EdgeInsets.all(AppConstants.md),
               decoration: const BoxDecoration(
@@ -300,13 +312,32 @@ class _AIChatPageState extends ConsumerState<AIChatPage> {
                   constraints: const BoxConstraints(maxWidth: 800),
                   child: Row(
                     children: [
+                      IconButton(
+                        icon: const Icon(Icons.add_circle_outline_rounded, color: AppColors.primary, size: 26),
+                        tooltip: 'Attach Image / file',
+                        onPressed: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Image attachment mode loaded.')),
+                          );
+                        },
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.mic_none_rounded, color: AppColors.primary, size: 26),
+                        tooltip: 'Voice Search / Speech input',
+                        onPressed: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Simulating voice input... speak now.')),
+                          );
+                        },
+                      ),
+                      const SizedBox(width: 4),
                       Expanded(
                         child: Semantics(
                           label: 'AI Chat prompt input field',
                           child: TextField(
                             controller: _inputController,
                             decoration: InputDecoration(
-                              hintText: 'Type your question...',
+                              hintText: 'Ask the tutor anything...',
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(AppConstants.radiusLg),
                                 borderSide: const BorderSide(color: AppColors.border),
