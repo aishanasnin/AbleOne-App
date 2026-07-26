@@ -7,6 +7,7 @@ import 'package:ableone_app/core/constants/app_constants.dart';
 import 'package:ableone_app/features/authentication/data/repositories/authentication_repository_impl.dart';
 import 'package:ableone_app/features/counselor/presentation/pages/student_list_page.dart';
 import 'package:ableone_app/features/counselor/presentation/pages/session_overview_page.dart';
+import 'package:ableone_app/features/accessibility/presentation/pages/accessibility_controls_page.dart';
 
 /// Counselor portal dashboard managing active child cases and video consultations.
 class CounselorDashboardPage extends ConsumerStatefulWidget {
@@ -114,6 +115,19 @@ class _CounselorDashboardPageState extends ConsumerState<CounselorDashboardPage>
             title: const Text('My Work Hours & Shifts'),
             trailing: const Icon(Icons.chevron_right_rounded),
             onTap: () {},
+          ),
+          ListTile(
+            leading: const Icon(Icons.settings_accessibility_rounded, color: AppColors.accent),
+            title: const Text('Accessibility Settings'),
+            trailing: const Icon(Icons.chevron_right_rounded),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const AccessibilityControlsPage(),
+                ),
+              );
+            },
           ),
         ],
       ),

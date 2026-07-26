@@ -13,6 +13,7 @@ import 'package:ableone_app/features/parent/data/repositories/parent_repository_
 import 'package:ableone_app/features/parent/presentation/widgets/progress_card.dart';
 import 'package:ableone_app/features/parent/presentation/widgets/activity_card.dart';
 import 'package:ableone_app/features/parent/presentation/widgets/insight_card.dart';
+import 'package:ableone_app/features/accessibility/presentation/pages/accessibility_controls_page.dart';
 
 /// Parent portal dashboard providing streaks, completed lessons, counselor updates, and AI recommendations.
 class ParentDashboardPage extends ConsumerStatefulWidget {
@@ -372,6 +373,19 @@ class _ParentDashboardPageState extends ConsumerState<ParentDashboardPage> {
             title: const Text('Notification Preferences'),
             trailing: const Icon(Icons.chevron_right_rounded),
             onTap: () {},
+          ),
+          ListTile(
+            leading: const Icon(Icons.settings_accessibility_rounded, color: AppColors.secondary),
+            title: const Text('Accessibility Settings'),
+            trailing: const Icon(Icons.chevron_right_rounded),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const AccessibilityControlsPage(),
+                ),
+              );
+            },
           ),
         ],
       ),

@@ -10,6 +10,7 @@ import 'package:ableone_app/shared/widgets/section_title.dart';
 import 'package:ableone_app/shared/widgets/primary_button.dart';
 import 'package:ableone_app/features/profile/data/repositories/profile_repository_impl.dart';
 import 'package:ableone_app/core/services/firebase_service.dart';
+import 'package:ableone_app/features/accessibility/presentation/pages/accessibility_controls_page.dart';
 
 /// Screen listing a student's active personalization preferences, support needs, and learning options.
 class ProfilePage extends ConsumerWidget {
@@ -137,6 +138,28 @@ class ProfilePage extends ConsumerWidget {
                         profile.needsCounselor ? 'Active counselor reviews enabled' : 'Counselor reviews disabled',
                         'Counselor review tracking preference',
                         theme,
+                      ),
+                      const SizedBox(height: AppConstants.sm),
+                      Card(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(AppConstants.radiusLg),
+                          side: const BorderSide(color: AppColors.border),
+                        ),
+                        elevation: 0,
+                        margin: const EdgeInsets.only(bottom: AppConstants.sm),
+                        child: ListTile(
+                          leading: const Icon(Icons.settings_accessibility_rounded, color: AppColors.primary),
+                          title: const Text('Configure Sizing & Contrast Settings', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                          trailing: const Icon(Icons.chevron_right_rounded),
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const AccessibilityControlsPage(),
+                              ),
+                            );
+                          },
+                        ),
                       ),
                       const SizedBox(height: AppConstants.xl),
 
