@@ -7,9 +7,50 @@ class ParentRepositoryImpl implements ParentRepository {
   @override
   Future<ChildProgressEntity?> getChildProgress(String childId) async {
     await Future.delayed(const Duration(milliseconds: 600));
+    if (childId == 'c2') {
+      return const ChildProgressEntity(
+        childId: 'c2',
+        childName: 'Emily Davis',
+        completedLessons: [
+          'Vowel Sounds Pronunciation',
+          'Audio Comprehension Basics',
+        ],
+        progressPercentage: 45.0,
+        streak: 2,
+        strengths: [
+          'Great auditory engagement',
+          'Persistent effort in speech',
+        ],
+        improvementAreas: [
+          'Visual reading alignment',
+          'Simplifying long sightwords',
+        ],
+      );
+    }
+    if (childId == 'c3') {
+      return const ChildProgressEntity(
+        childId: 'c3',
+        childName: 'Chloe Clark',
+        completedLessons: [
+          'Complex Sentence Sequencing',
+          'Advanced Dialogue Comprehension',
+          'Diagnostic Writing Exercise',
+        ],
+        progressPercentage: 95.0,
+        streak: 12,
+        strengths: [
+          'Exceptional textual retention',
+          'Advanced grammar sequencing',
+        ],
+        improvementAreas: [
+          'Keyboard hotkey guidance',
+          'Focus markers calibration',
+        ],
+      );
+    }
     return const ChildProgressEntity(
       childId: 'c1',
-      childName: 'Alex',
+      childName: 'Alex Smith',
       completedLessons: [
         'Photosynthesis Overview',
         'Plant Cells Structure',
