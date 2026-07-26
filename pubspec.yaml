@@ -59,6 +59,7 @@ dependencies:
   logger: ^2.7.0
   uuid: ^4.6.0
   http: ^1.2.2
+  flutter_dotenv: ^5.2.1
 
 dev_dependencies:
   flutter_test:
@@ -80,6 +81,7 @@ flutter:
     - assets/icons/
     - assets/animations/
     - assets/translations/
+    - .env
 
   fonts:
     - family: Poppins

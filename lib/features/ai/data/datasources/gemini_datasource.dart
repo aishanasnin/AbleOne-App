@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:ableone_app/config/app_config.dart';
+import 'package:ableone_app/features/ai/data/datasources/fake_ai_data_source.dart';
 import 'package:ableone_app/features/ai/domain/entities/ai_user_context.dart';
 import 'package:ableone_app/features/ai/domain/services/ai_service.dart';
 
@@ -13,14 +14,14 @@ class GeminiDatasource implements AIService {
 
   /// Requests response content from Gemini 1.5 Flash using the compiled API key,
   /// passing the active user profile [context] within system instructions.
+  /// If the API key is not configured, it falls back to the mock datasource [FakeAIDataSource].
   @override
   Future<String> generateResponse(String prompt, AIUserContext context) async {
     final apiKey = AppConfig.geminiApiKey;
     if (apiKey.isEmpty) {
-      throw Exception(
-        'Gemini API key is not configured in the application environment. '
-        'Please build the application with --dart-define=GEMINI_API_KEY=your_key.',
-      );
+      // Fallback to FakeAIDataSource if API key is not configured
+      final fallback = FakeAIDataSource();
+      return await fallback.getAIResponse(prompt, context);
     }
 
     final url = Uri.parse(
