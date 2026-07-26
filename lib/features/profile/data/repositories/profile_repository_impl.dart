@@ -105,6 +105,60 @@ class UserProfileNotifier extends StateNotifier<AsyncValue<UserProfileEntity?>> 
       state = AsyncValue.error(e, stack);
     }
   }
+
+  /// Updates only the support needs.
+  Future<void> updateSupportNeeds(List<String> supportNeeds) async {
+    final currentProfile = state.value;
+    if (currentProfile == null) return;
+    final updated = UserProfileEntity(
+      id: currentProfile.id,
+      name: currentProfile.name,
+      role: currentProfile.role,
+      supportNeeds: supportNeeds,
+      learningLevel: currentProfile.learningLevel,
+      learningPreference: currentProfile.learningPreference,
+      preferredLanguage: currentProfile.preferredLanguage,
+      needsCounselor: currentProfile.needsCounselor,
+      createdAt: currentProfile.createdAt,
+    );
+    await updateProfile(updated);
+  }
+
+  /// Updates only the learning level.
+  Future<void> updateLearningLevel(String level) async {
+    final currentProfile = state.value;
+    if (currentProfile == null) return;
+    final updated = UserProfileEntity(
+      id: currentProfile.id,
+      name: currentProfile.name,
+      role: currentProfile.role,
+      supportNeeds: currentProfile.supportNeeds,
+      learningLevel: level,
+      learningPreference: currentProfile.learningPreference,
+      preferredLanguage: currentProfile.preferredLanguage,
+      needsCounselor: currentProfile.needsCounselor,
+      createdAt: currentProfile.createdAt,
+    );
+    await updateProfile(updated);
+  }
+
+  /// Updates only the learning preference.
+  Future<void> updateLearningPreference(String preference) async {
+    final currentProfile = state.value;
+    if (currentProfile == null) return;
+    final updated = UserProfileEntity(
+      id: currentProfile.id,
+      name: currentProfile.name,
+      role: currentProfile.role,
+      supportNeeds: currentProfile.supportNeeds,
+      learningLevel: currentProfile.learningLevel,
+      learningPreference: preference,
+      preferredLanguage: currentProfile.preferredLanguage,
+      needsCounselor: currentProfile.needsCounselor,
+      createdAt: currentProfile.createdAt,
+    );
+    await updateProfile(updated);
+  }
 }
 
 /// Provider managing active user profile states.

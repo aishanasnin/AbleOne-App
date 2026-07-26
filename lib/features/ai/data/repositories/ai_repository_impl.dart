@@ -2,9 +2,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
 import 'package:uuid/uuid.dart';
 import 'package:ableone_app/features/ai/domain/entities/ai_message_entity.dart';
+import 'package:ableone_app/features/ai/domain/entities/ai_user_context.dart';
 import 'package:ableone_app/features/ai/domain/repositories/ai_repository.dart';
 import 'package:ableone_app/features/ai/data/datasources/fake_ai_data_source.dart';
 import 'package:ableone_app/features/ai/data/models/ai_message_model.dart';
+import 'package:ableone_app/features/ai/presentation/providers/ai_providers.dart';
 
 /// Implementation of [AIRepository] using [FakeAIDataSource] and Hive for local storage.
 class AIRepositoryImpl implements AIRepository {
@@ -37,7 +39,7 @@ class AIRepositoryImpl implements AIRepository {
   }
 
   @override
-  Future<AIMessageEntity> sendMessage(String message) async {
+  Future<AIMessageEntity> sendMessage(String message, AIUserContext context) async {
     try {
       final box = await _openBox();
       const uuid = Uuid();
@@ -52,7 +54,7 @@ class AIRepositoryImpl implements AIRepository {
       await box.put(userMessage.id, userMessage.toMap());
 
       // Fetch simulated response
-      final responseText = await _dataSource.getAIResponse(message);
+      final responseText = await _dataSource.getAIResponse(message, context);
 
       // Create and save AI response
       final assistantMessage = AIMessageModel(
@@ -133,8 +135,10 @@ class ChatMessagesNotifier extends StateNotifier<List<AIMessageEntity>> {
     // Trigger typing indicator
     _ref.read(aiTypingProvider.notifier).state = true;
 
+    final context = _ref.read(aiUserContextProvider);
+
     try {
-      final assistantMessage = await _repository.sendMessage(text);
+      final assistantMessage = await _repository.sendMessage(text, context);
       state = [...state, assistantMessage];
     } catch (_) {
       // Create a warning message bubble if the operation failed

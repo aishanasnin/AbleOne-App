@@ -11,6 +11,7 @@ import 'package:ableone_app/features/authentication/data/repositories/authentica
 import 'package:ableone_app/features/learning/data/repositories/course_repository_impl.dart';
 import 'package:ableone_app/features/learning/domain/entities/course_entity.dart';
 import 'package:ableone_app/core/services/firebase_service.dart';
+import 'package:ableone_app/features/profile/presentation/providers/profile_providers.dart';
 
 /// The main dashboard screen for student users, featuring quick access tabs
 /// for course overview, lesson paths, therapy schedules, and user preference profiles.
@@ -104,6 +105,8 @@ class _StudentDashboardPageState extends ConsumerState<StudentDashboardPage> {
         : const AsyncValue<dynamic>.loading();
 
     final coursesAsync = ref.watch(coursesListProvider);
+    final profile = ref.watch(userProfileProvider);
+    final greetingName = profile?.name ?? ref.watch(firebaseAuthProvider).currentUser?.displayName ?? 'Student';
 
     return ListView(
       padding: const EdgeInsets.all(AppConstants.lg),
@@ -127,7 +130,7 @@ class _StudentDashboardPageState extends ConsumerState<StudentDashboardPage> {
                       Semantics(
                         header: true,
                         child: Text(
-                          'Hello, Student! 👋',
+                          'Hello, $greetingName! 👋',
                           style: theme.textTheme.headlineMedium?.copyWith(
                             fontWeight: FontWeight.bold,
                             color: AppColors.primaryDark,
@@ -153,6 +156,82 @@ class _StudentDashboardPageState extends ConsumerState<StudentDashboardPage> {
               ],
             ),
           ),
+        ),
+        const SizedBox(height: AppConstants.lg),
+
+        // ACTIVE LEARNING MODE
+        const SectionTitle(title: 'Active Learning Mode'),
+        const SizedBox(height: AppConstants.sm),
+        DashboardCard(
+          title: 'Personalized Profile Settings',
+          subtitle: 'Level: ${profile?.learningLevel ?? 'Beginner'} • Style: ${profile?.learningPreference ?? 'Simple explanations'}',
+          icon: Icons.accessibility_new_rounded,
+          color: AppColors.secondary,
+          onTap: () {
+            context.push(RouteNames.profilePagePath);
+          },
+          content: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: AppConstants.xs),
+              Wrap(
+                spacing: AppConstants.sm,
+                runSpacing: AppConstants.xs,
+                children: (profile?.supportNeeds ?? const []).isEmpty
+                    ? [
+                        Chip(
+                          label: const Text('No specific support needs', style: TextStyle(fontSize: 12)),
+                          avatar: const Icon(Icons.check_circle_outline_rounded, size: 14, color: AppColors.secondary),
+                          backgroundColor: AppColors.secondary.withValues(alpha: 0.05),
+                          side: BorderSide.none,
+                        )
+                      ]
+                    : (profile?.supportNeeds ?? const []).map((need) {
+                        return Chip(
+                          label: Text(need, style: const TextStyle(fontSize: 12)),
+                          avatar: Icon(_getSupportIcon(need), size: 14, color: AppColors.secondary),
+                          backgroundColor: AppColors.secondary.withValues(alpha: 0.05),
+                          side: BorderSide.none,
+                        );
+                      }).toList(),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: AppConstants.lg),
+
+        // RECOMMENDED ACTIONS
+        const SectionTitle(title: 'Recommended Actions'),
+        const SizedBox(height: AppConstants.sm),
+        if (profile == null || profile.supportNeeds.isEmpty)
+          DashboardCard(
+            title: 'Complete Accessibility Setup',
+            subtitle: 'Configure your personalized support needs and learning level for a tailored experience.',
+            icon: Icons.settings_accessibility_rounded,
+            color: AppColors.error,
+            onTap: () {
+              context.push(RouteNames.accessibilitySetupPath, extra: profile?.supportNeeds ?? const []);
+            },
+          ),
+        DashboardCard(
+          title: 'Start AI Tutor Session',
+          subtitle: 'Learn with custom explanations in "${profile?.learningPreference ?? 'Simple explanations'}" style.',
+          icon: Icons.chat_bubble_outline_rounded,
+          color: AppColors.primary,
+          onTap: () {
+            context.push(RouteNames.aiHomePath);
+          },
+        ),
+        DashboardCard(
+          title: 'Perform Daily Focus Exercises',
+          subtitle: 'Access therapy sessions designed for your cognitive learning profile.',
+          icon: Icons.fitness_center_rounded,
+          color: AppColors.secondary,
+          onTap: () {
+            setState(() {
+              _currentIndex = 2; // Swap to Therapy Tab
+            });
+          },
         ),
         const SizedBox(height: AppConstants.lg),
 
@@ -628,5 +707,26 @@ class _StudentDashboardPageState extends ConsumerState<StudentDashboardPage> {
         ],
       ),
     );
+  }
+
+  IconData _getSupportIcon(String need) {
+    switch (need.toLowerCase()) {
+      case 'visual support':
+        return Icons.visibility_rounded;
+      case 'hearing support':
+        return Icons.hearing_rounded;
+      case 'speech support':
+        return Icons.record_voice_over_rounded;
+      case 'physical support':
+        return Icons.accessible_rounded;
+      case 'learning support':
+        return Icons.menu_book_rounded;
+      case 'autism / neurodivergent support':
+        return Icons.psychology_rounded;
+      case 'multiple support needs':
+        return Icons.dynamic_feed_rounded;
+      default:
+        return Icons.accessibility_new_rounded;
+    }
   }
 }
