@@ -8,8 +8,15 @@ import 'package:ableone_app/shared/widgets/dashboard_card.dart';
 import 'package:ableone_app/shared/widgets/stat_card.dart';
 import 'package:ableone_app/shared/widgets/section_title.dart';
 import 'package:ableone_app/features/authentication/data/repositories/authentication_repository_impl.dart';
+import 'package:ableone_app/features/parent/domain/entities/child_progress_entity.dart';
+import 'package:ableone_app/features/parent/data/repositories/parent_repository_impl.dart';
+import 'package:ableone_app/features/parent/presentation/widgets/progress_card.dart';
+import 'package:ableone_app/features/parent/presentation/widgets/activity_card.dart';
+import 'package:ableone_app/features/parent/presentation/widgets/insight_card.dart';
 
+/// Parent portal dashboard providing streaks, completed lessons, counselor updates, and AI recommendations.
 class ParentDashboardPage extends ConsumerStatefulWidget {
+  /// Creates a [ParentDashboardPage] instance.
   const ParentDashboardPage({super.key});
 
   @override
@@ -27,6 +34,12 @@ class _ParentDashboardPageState extends ConsumerState<ParentDashboardPage> {
     final size = MediaQuery.of(context).size;
     final isDesktop = size.width > 900;
     final isTablet = size.width <= 900 && size.width > 600;
+
+    // Watch parent insight providers for child ID 'c1'
+    final progressAsync = ref.watch(childProgressProvider('c1'));
+    final activitiesAsync = ref.watch(parentRecentActivitiesProvider('c1'));
+    final updatesAsync = ref.watch(parentCounselorUpdatesProvider('c1'));
+    final insightsAsync = ref.watch(parentAIInsightsProvider('c1'));
 
     return Scaffold(
       appBar: AppBar(
@@ -49,7 +62,7 @@ class _ParentDashboardPageState extends ConsumerState<ParentDashboardPage> {
         child: IndexedStack(
           index: _currentIndex,
           children: [
-            _buildHomeTab(theme, isDesktop, isTablet),
+            _buildHomeTab(theme, isDesktop, isTablet, progressAsync, activitiesAsync, updatesAsync, insightsAsync),
             _buildProgressTab(theme, isDesktop, isTablet),
             _buildConsultTab(theme, isDesktop, isTablet),
             _buildProfileTab(theme),
@@ -89,7 +102,15 @@ class _ParentDashboardPageState extends ConsumerState<ParentDashboardPage> {
     );
   }
 
-  Widget _buildHomeTab(ThemeData theme, bool isDesktop, bool isTablet) {
+  Widget _buildHomeTab(
+    ThemeData theme,
+    bool isDesktop,
+    bool isTablet,
+    AsyncValue<ChildProgressEntity?> progressAsync,
+    AsyncValue<List<String>> activitiesAsync,
+    AsyncValue<List<String>> updatesAsync,
+    AsyncValue<List<String>> insightsAsync,
+  ) {
     return ListView(
       padding: const EdgeInsets.all(AppConstants.lg),
       children: [
@@ -135,21 +156,87 @@ class _ParentDashboardPageState extends ConsumerState<ParentDashboardPage> {
         ),
         const SizedBox(height: AppConstants.lg),
 
-        const SectionTitle(title: 'Child\'s Active Workspaces'),
+        const SectionTitle(title: 'Child Profile & Progress'),
         const SizedBox(height: AppConstants.sm),
-        
-        DashboardCard(
-          title: 'Alex Smith',
-          subtitle: 'Active Profile: Student Level 2',
-          icon: Icons.person_rounded,
-          color: AppColors.primary,
-          content: Column(
-            children: [
-              _buildSummaryStat('Last Active', 'Today, 10:24 AM'),
-              _buildSummaryStat('Weekly Lessons Completed', '4 / 6'),
-              _buildSummaryStat('Next Counseling Session', 'Tomorrow, 4:00 PM'),
-            ],
+
+        progressAsync.when(
+          data: (progress) {
+            if (progress == null) {
+              return const Card(
+                child: Padding(
+                  padding: EdgeInsets.all(AppConstants.lg),
+                  child: Text('No active profile found.'),
+                ),
+              );
+            }
+            return ProgressCard(progress: progress);
+          },
+          error: (err, _) => Card(
+            child: Padding(
+              padding: const EdgeInsets.all(AppConstants.lg),
+              child: Text('Error loading progress: $err'),
+            ),
           ),
+          loading: () => const Center(
+            child: Padding(
+              padding: EdgeInsets.all(AppConstants.lg),
+              child: CircularProgressIndicator(),
+            ),
+          ),
+        ),
+
+        const SizedBox(height: AppConstants.md),
+
+        const SectionTitle(title: 'AI Insights & Strengths'),
+        const SizedBox(height: AppConstants.sm),
+
+        progressAsync.when(
+          data: (progress) {
+            if (progress == null) return const SizedBox.shrink();
+            return insightsAsync.when(
+              data: (insights) => InsightCard(
+                strengths: progress.strengths,
+                improvements: progress.improvementAreas,
+                aiInsights: insights,
+              ),
+              error: (err, _) => const SizedBox.shrink(),
+              loading: () => const Center(child: CircularProgressIndicator()),
+            );
+          },
+          error: (err, _) => const SizedBox.shrink(),
+          loading: () => const SizedBox.shrink(),
+        ),
+
+        const SizedBox(height: AppConstants.md),
+
+        const SectionTitle(title: 'Counselor Updates'),
+        const SizedBox(height: AppConstants.sm),
+
+        updatesAsync.when(
+          data: (updates) => ActivityCard(
+            title: 'Counselor Recommendations',
+            icon: Icons.supervisor_account_rounded,
+            iconColor: AppColors.accent,
+            activities: updates,
+          ),
+          error: (err, _) => const SizedBox.shrink(),
+          loading: () => const Center(child: CircularProgressIndicator()),
+        ),
+
+        const SizedBox(height: AppConstants.md),
+
+        const SectionTitle(title: 'Recent Activities'),
+        const SizedBox(height: AppConstants.sm),
+
+        activitiesAsync.when(
+          data: (activities) => ActivityCard(
+            title: 'Recent Timeline',
+            icon: Icons.history_rounded,
+            iconColor: AppColors.primary,
+            activities: activities,
+          ),
+          error: (err, _) => const SizedBox.shrink(),
+          loading: () => const Center(child: CircularProgressIndicator()),
         ),
       ],
     );
@@ -286,19 +373,6 @@ class _ParentDashboardPageState extends ConsumerState<ParentDashboardPage> {
             trailing: const Icon(Icons.chevron_right_rounded),
             onTap: () {},
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSummaryStat(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: AppConstants.sm),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label, style: const TextStyle(color: AppColors.textSecondary)),
-          Text(value, style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
         ],
       ),
     );
