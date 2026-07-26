@@ -9,6 +9,9 @@ import 'package:ableone_app/features/counselor/presentation/pages/student_list_p
 import 'package:ableone_app/features/counselor/presentation/pages/session_overview_page.dart';
 import 'package:ableone_app/features/accessibility/presentation/pages/accessibility_controls_page.dart';
 
+import 'package:ableone_app/features/communication/presentation/pages/notification_center_page.dart';
+import 'package:ableone_app/features/communication/presentation/pages/conversation_list_page.dart';
+
 /// Counselor portal dashboard managing active child cases and video consultations.
 class CounselorDashboardPage extends ConsumerStatefulWidget {
   /// Creates a [CounselorDashboardPage] instance.
@@ -31,6 +34,30 @@ class _CounselorDashboardPageState extends ConsumerState<CounselorDashboardPage>
       appBar: AppBar(
         title: Text(_titles[_currentIndex]),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.notifications_none_rounded),
+            tooltip: 'Notifications',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute<void>(
+                  builder: (context) => const NotificationCenterPage(),
+                ),
+              );
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.mail_outline_rounded),
+            tooltip: 'Inbox Messages',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute<void>(
+                  builder: (context) => const ConversationListPage(),
+                ),
+              );
+            },
+          ),
           Semantics(
             label: 'Logout from counselor account',
             child: IconButton(

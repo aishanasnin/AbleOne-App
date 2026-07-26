@@ -13,6 +13,8 @@ import 'package:ableone_app/features/learning/domain/entities/course_entity.dart
 import 'package:ableone_app/core/services/firebase_service.dart';
 import 'package:ableone_app/features/profile/presentation/providers/profile_providers.dart';
 import 'package:ableone_app/shared/widgets/premium_widgets.dart';
+import 'package:ableone_app/features/communication/presentation/pages/notification_center_page.dart';
+import 'package:ableone_app/features/communication/presentation/pages/conversation_list_page.dart';
 
 /// The main dashboard screen for student users, featuring quick access tabs
 /// for course overview, lesson paths, therapy schedules, and user preference profiles.
@@ -40,6 +42,30 @@ class _StudentDashboardPageState extends ConsumerState<StudentDashboardPage> {
       appBar: AppBar(
         title: Text(_titles[_currentIndex]),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.notifications_none_rounded),
+            tooltip: 'Notifications',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute<void>(
+                  builder: (context) => const NotificationCenterPage(),
+                ),
+              );
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.mail_outline_rounded),
+            tooltip: 'Inbox Messages',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute<void>(
+                  builder: (context) => const ConversationListPage(),
+                ),
+              );
+            },
+          ),
           Semantics(
             label: 'Log out from student account',
             child: IconButton(

@@ -16,6 +16,9 @@ import 'package:ableone_app/features/parent/presentation/widgets/insight_card.da
 import 'package:ableone_app/features/accessibility/presentation/pages/accessibility_controls_page.dart';
 import 'package:ableone_app/shared/widgets/premium_widgets.dart';
 
+import 'package:ableone_app/features/communication/presentation/pages/notification_center_page.dart';
+import 'package:ableone_app/features/communication/presentation/pages/conversation_list_page.dart';
+
 /// Parent portal dashboard providing streaks, completed lessons, counselor updates, and AI recommendations.
 class ParentDashboardPage extends ConsumerStatefulWidget {
   /// Creates a [ParentDashboardPage] instance.
@@ -28,7 +31,7 @@ class ParentDashboardPage extends ConsumerStatefulWidget {
 class _ParentDashboardPageState extends ConsumerState<ParentDashboardPage> {
   int _currentIndex = 0;
 
-  final List<String> _titles = ['Parent Home', 'Child Analytics', 'Therapist Consults', 'Preferences'];
+  final List<String> _titles = ['Parent Dashboard', 'Detailed Progress', 'Therapist Consult', 'My Profile'];
 
   @override
   Widget build(BuildContext context) {
@@ -47,6 +50,30 @@ class _ParentDashboardPageState extends ConsumerState<ParentDashboardPage> {
       appBar: AppBar(
         title: Text(_titles[_currentIndex]),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.notifications_none_rounded),
+            tooltip: 'Notifications',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute<void>(
+                  builder: (context) => const NotificationCenterPage(),
+                ),
+              );
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.mail_outline_rounded),
+            tooltip: 'Inbox Messages',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute<void>(
+                  builder: (context) => const ConversationListPage(),
+                ),
+              );
+            },
+          ),
           Semantics(
             label: 'Logout from parent account',
             child: IconButton(

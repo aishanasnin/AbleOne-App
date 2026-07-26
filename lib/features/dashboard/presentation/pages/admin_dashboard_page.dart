@@ -13,6 +13,9 @@ import 'package:ableone_app/features/admin/presentation/widgets/admin_widgets.da
 import 'package:ableone_app/features/admin/presentation/pages/admin_users_list_page.dart';
 import 'package:ableone_app/features/admin/presentation/pages/admin_course_list_page.dart';
 
+import 'package:ableone_app/features/communication/presentation/pages/notification_center_page.dart';
+import 'package:ableone_app/features/communication/presentation/pages/conversation_list_page.dart';
+
 class AdminDashboardPage extends ConsumerStatefulWidget {
   const AdminDashboardPage({super.key});
 
@@ -36,6 +39,30 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
       appBar: AppBar(
         title: Text(_titles[_currentIndex]),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.notifications_none_rounded),
+            tooltip: 'Notifications',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute<void>(
+                  builder: (context) => const NotificationCenterPage(),
+                ),
+              );
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.mail_outline_rounded),
+            tooltip: 'Inbox Messages',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute<void>(
+                  builder: (context) => const ConversationListPage(),
+                ),
+              );
+            },
+          ),
           Semantics(
             label: 'Logout from administrator account',
             child: IconButton(
