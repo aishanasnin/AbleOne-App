@@ -1,17 +1,110 @@
-# ableone_app
+# AbleOne-App 💙
 
-A new Flutter project.
+AI-powered accessibility-first learning platform built with Flutter.
 
-## Getting Started
+## 🌟 About AbleOne
 
-This project is a starting point for a Flutter application.
+AbleOne is an inclusive learning ecosystem designed to support people with different accessibility needs.
 
-A few resources to get you started if this is your first Flutter project:
+Our vision:
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+> "Accessibility should adapt to the person — not the person adapting to accessibility."
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+AbleOne combines AI, personalized learning, accessibility features, and human support to create an adaptive learning experience.
+
+---
+
+## 🚀 Current Features
+
+### ✅ Authentication
+- User registration
+- Login system
+- Role-based access
+
+Roles:
+- Student
+- Parent
+- Counselor
+- Admin
+
+---
+
+### ✅ Personalized Accessibility Profile
+
+Users can customize their experience based on:
+
+- Visual support needs
+- Hearing support needs
+- Speech support needs
+- Physical support needs
+- Learning support needs
+- Neurodivergent support needs
+
+Learning preferences:
+- Simple explanations
+- Detailed explanations
+- Visual examples
+- Step-by-step guidance
+
+---
+
+### ✅ Learning Module
+
+Features:
+
+- Course structure
+- Modules
+- Lessons
+- Learning progress tracking
+
+---
+
+### ✅ AI Tutor
+
+Current AI features:
+
+- AI chat interface
+- Topic explanation
+- Summarization
+- Translation
+- Simplified explanations
+- Chat history storage
+
+AI personalization support:
+
+- Learning level
+- Support needs
+- Learning preferences
+- Preferred language
+
+---
+
+## 🛠️ Tech Stack
+
+Frontend:
+- Flutter
+- Dart
+
+Architecture:
+- Clean Architecture
+- SOLID principles
+
+State Management:
+- Riverpod
+
+Navigation:
+- GoRouter
+
+UI:
+- Material 3
+- Accessibility-first design
+
+Local Storage:
+- Hive
+
+AI:
+- Gemini AI integration architecture
+
+---
+
+## 📂 Project Structure
