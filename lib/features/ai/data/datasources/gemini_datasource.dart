@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:ableone_app/config/app_config.dart';
 import 'package:ableone_app/features/ai/data/datasources/fake_ai_data_source.dart';
-import 'package:ableone_app/features/ai/domain/entities/ai_user_context.dart';
+import 'package:ableone_app/features/ai/domain/entities/ai_context_entity.dart';
 import 'package:ableone_app/features/ai/domain/services/ai_service.dart';
 
 /// Gemini implementation of [AIService], fetching real-time model responses.
@@ -16,7 +16,7 @@ class GeminiDatasource implements AIService {
   /// passing the active user profile [context] within system instructions.
   /// If the API key is not configured, it falls back to the mock datasource [FakeAIDataSource].
   @override
-  Future<String> generateResponse(String prompt, AIUserContext context) async {
+  Future<String> generateResponse(String prompt, AIContextEntity context) async {
     final apiKey = AppConfig.geminiApiKey;
     if (apiKey.isEmpty) {
       // Fallback to FakeAIDataSource if API key is not configured
@@ -28,14 +28,20 @@ class GeminiDatasource implements AIService {
       'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$apiKey',
     );
 
-    // Build personalization system instructions
-    final supportDesc = context.supportNeeds.isEmpty ? 'None' : context.supportNeeds.join(', ');
+    // Build personalization system instructions with active lesson context
+    final supportDesc = context.accessibilityNeeds.isEmpty ? 'None' : context.accessibilityNeeds.join(', ');
+    final courseText = context.currentCourse != null ? context.currentCourse!.title : 'None';
+    final lessonText = context.currentLesson != null ? context.currentLesson!.title : 'None';
+
     final systemInstruction = 'You are AbleOne AI Tutor.\n\n'
-        'Student level: ${context.learningLevel}.\n'
+        'Student level: ${context.userLevel}.\n'
         'Accessibility needs: $supportDesc.\n'
         'Learning preference: ${context.learningPreference}.\n'
-        'Preferred language: ${context.preferredLanguage}.\n\n'
-        'Explain the topic clearly with examples, ensuring the formatting, tone, and complexity strictly match the student\'s profile above.';
+        'Preferred language: ${context.language}.\n\n'
+        'Current course: $courseText.\n'
+        'Current lesson: $lessonText.\n\n'
+        'Explain using simple examples. Tailor your formatting, structure, and explanation complexity to the student\'s profile above. '
+        'If a lesson is actively set, prioritize explaining or referencing that topic.';
 
     final requestBody = {
       'contents': [

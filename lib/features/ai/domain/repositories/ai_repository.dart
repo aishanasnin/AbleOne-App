@@ -1,5 +1,5 @@
 import 'package:ableone_app/features/ai/domain/entities/ai_message_entity.dart';
-import 'package:ableone_app/features/ai/domain/entities/ai_user_context.dart';
+import 'package:ableone_app/features/ai/domain/entities/ai_context_entity.dart';
 
 /// Repository interface defining chat operations and local message history management.
 abstract class AIRepository {
@@ -7,7 +7,7 @@ abstract class AIRepository {
   Future<List<AIMessageEntity>> getChatHistory();
 
   /// Sends a prompt to the AI engine, saves both user input and output to history, and returns the response.
-  Future<AIMessageEntity> sendMessage(String message, AIUserContext context, {bool useFallback = false});
+  Future<AIMessageEntity> sendMessage(String message, AIContextEntity context, {bool useFallback = false});
 
   /// Clears all local chat logs.
   Future<void> clearHistory();

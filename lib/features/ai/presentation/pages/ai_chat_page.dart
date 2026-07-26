@@ -6,6 +6,7 @@ import 'package:ableone_app/features/ai/domain/entities/ai_message_entity.dart';
 import 'package:ableone_app/features/ai/data/repositories/ai_repository_impl.dart';
 import 'package:ableone_app/features/ai/presentation/widgets/chat_bubble.dart';
 import 'package:ableone_app/features/ai/presentation/widgets/typing_indicator.dart';
+import 'package:ableone_app/features/ai/presentation/providers/ai_providers.dart';
 
 /// Interactive chat screen with the AI Tutor, handling prompt inputs, message streams, and scroll alignments.
 class AIChatPage extends ConsumerStatefulWidget {
@@ -63,6 +64,8 @@ class _AIChatPageState extends ConsumerState<AIChatPage> {
     final messages = ref.watch(chatMessagesProvider);
     final isTyping = ref.watch(aiTypingProvider);
     final chatError = ref.watch(aiChatErrorProvider);
+    final activeCourse = ref.watch(currentCourseStateProvider);
+    final activeLesson = ref.watch(currentLessonStateProvider);
 
     // Reactively scroll down whenever messages array updates
     ref.listen<List<AIMessageEntity>>(chatMessagesProvider, (prev, next) {
@@ -233,6 +236,58 @@ class _AIChatPageState extends ConsumerState<AIChatPage> {
                 ),
               ),
 
+            // Quick action chips if a lesson is active
+            if (activeLesson != null)
+              Container(
+                height: 48,
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: AppConstants.lg),
+                  children: [
+                    _buildQuickActionChip(
+                      label: 'Explain this lesson',
+                      icon: Icons.psychology_outlined,
+                      onPressed: () {
+                        ref.read(chatMessagesProvider.notifier).sendMessage(
+                          'Explain the lesson "${activeLesson.title}" from the course "${activeCourse?.title ?? ''}" in detail.',
+                        );
+                      },
+                    ),
+                    const SizedBox(width: AppConstants.sm),
+                    _buildQuickActionChip(
+                      label: 'Summarize this lesson',
+                      icon: Icons.summarize_outlined,
+                      onPressed: () {
+                        ref.read(chatMessagesProvider.notifier).sendMessage(
+                          'Summarize the key points of the lesson "${activeLesson.title}".',
+                        );
+                      },
+                    ),
+                    const SizedBox(width: AppConstants.sm),
+                    _buildQuickActionChip(
+                      label: 'Create practice questions',
+                      icon: Icons.quiz_outlined,
+                      onPressed: () {
+                        ref.read(chatMessagesProvider.notifier).sendMessage(
+                          'Create a few practice questions with multiple choice options for the lesson "${activeLesson.title}".',
+                        );
+                      },
+                    ),
+                    const SizedBox(width: AppConstants.sm),
+                    _buildQuickActionChip(
+                      label: 'Give examples',
+                      icon: Icons.lightbulb_outline_rounded,
+                      onPressed: () {
+                        ref.read(chatMessagesProvider.notifier).sendMessage(
+                          'Give real-world examples to help understand "${activeLesson.title}".',
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
+
             // Input controller footer panel
             Container(
               padding: const EdgeInsets.all(AppConstants.md),
@@ -282,6 +337,29 @@ class _AIChatPageState extends ConsumerState<AIChatPage> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildQuickActionChip({
+    required String label,
+    required IconData icon,
+    required VoidCallback onPressed,
+  }) {
+    return ActionChip(
+      onPressed: onPressed,
+      avatar: Icon(icon, size: 16, color: AppColors.primary),
+      label: Text(label),
+      labelStyle: const TextStyle(
+        fontSize: 12,
+        color: AppColors.textPrimary,
+        fontWeight: FontWeight.w500,
+      ),
+      backgroundColor: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppConstants.radiusMd),
+        side: const BorderSide(color: AppColors.border, width: 1),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 4),
     );
   }
 }

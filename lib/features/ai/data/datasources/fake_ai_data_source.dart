@@ -1,9 +1,9 @@
-import 'package:ableone_app/features/ai/domain/entities/ai_user_context.dart';
+import 'package:ableone_app/features/ai/domain/entities/ai_context_entity.dart';
 
 /// A mock AI datasource simulating tutor responses for explanations, summaries, translations, and simplifications.
 class FakeAIDataSource {
   /// Simulates a network call delay and matches keywords in the user's [prompt] to return educational responses.
-  Future<String> getAIResponse(String prompt, AIUserContext context) async {
+  Future<String> getAIResponse(String prompt, AIContextEntity context) async {
     // Simulate network delay
     await Future.delayed(const Duration(seconds: 1));
 
@@ -27,8 +27,8 @@ class FakeAIDataSource {
     }
 
     // Append context-based formatting footnote
-    final supportDesc = context.supportNeeds.isEmpty ? 'General Support' : context.supportNeeds.join(', ');
-    final suffix = '\n\n*(Tailored for: Level ${context.learningLevel} • ${context.learningPreference} • $supportDesc)*';
+    final supportDesc = context.accessibilityNeeds.isEmpty ? 'General Support' : context.accessibilityNeeds.join(', ');
+    final suffix = '\n\n*(Tailored for: Level ${context.userLevel} • ${context.learningPreference} • $supportDesc)*';
 
     return '$responseText$suffix';
   }

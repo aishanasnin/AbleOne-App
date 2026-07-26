@@ -2,7 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
 import 'package:uuid/uuid.dart';
 import 'package:ableone_app/features/ai/domain/entities/ai_message_entity.dart';
-import 'package:ableone_app/features/ai/domain/entities/ai_user_context.dart';
+import 'package:ableone_app/features/ai/domain/entities/ai_context_entity.dart';
 import 'package:ableone_app/features/ai/domain/repositories/ai_repository.dart';
 import 'package:ableone_app/features/ai/domain/services/ai_service.dart';
 import 'package:ableone_app/features/ai/data/datasources/fake_ai_data_source.dart';
@@ -41,7 +41,7 @@ class AIRepositoryImpl implements AIRepository {
   }
 
   @override
-  Future<AIMessageEntity> sendMessage(String message, AIUserContext context, {bool useFallback = false}) async {
+  Future<AIMessageEntity> sendMessage(String message, AIContextEntity context, {bool useFallback = false}) async {
     try {
       final box = await _openBox();
       const uuid = Uuid();
@@ -167,7 +167,7 @@ class ChatMessagesNotifier extends StateNotifier<List<AIMessageEntity>> {
     // Trigger typing indicator
     _ref.read(aiTypingProvider.notifier).state = true;
 
-    final context = _ref.read(aiUserContextProvider);
+    final context = _ref.read(aiContextProvider);
 
     try {
       final assistantMessage = await _repository.sendMessage(text, context);
@@ -191,7 +191,7 @@ class ChatMessagesNotifier extends StateNotifier<List<AIMessageEntity>> {
     // Trigger typing indicator
     _ref.read(aiTypingProvider.notifier).state = true;
 
-    final context = _ref.read(aiUserContextProvider);
+    final context = _ref.read(aiContextProvider);
 
     try {
       final assistantMessage = await _repository.sendMessage(prompt, context);
@@ -215,7 +215,7 @@ class ChatMessagesNotifier extends StateNotifier<List<AIMessageEntity>> {
     // Trigger typing indicator
     _ref.read(aiTypingProvider.notifier).state = true;
 
-    final context = _ref.read(aiUserContextProvider);
+    final context = _ref.read(aiContextProvider);
 
     try {
       final assistantMessage = await _repository.sendMessage(prompt, context, useFallback: true);

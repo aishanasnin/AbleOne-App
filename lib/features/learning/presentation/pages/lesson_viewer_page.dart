@@ -9,6 +9,7 @@ import 'package:ableone_app/shared/widgets/primary_button.dart';
 import 'package:ableone_app/features/learning/domain/entities/progress_entity.dart';
 import 'package:ableone_app/features/learning/data/repositories/course_repository_impl.dart';
 import 'package:ableone_app/core/services/firebase_service.dart';
+import 'package:ableone_app/features/ai/presentation/providers/ai_providers.dart';
 
 /// Screen executing the rendering of visual content for lessons depending on
 /// their type (Video player layout, PDF mock viewer, Text document layout,
@@ -119,8 +120,28 @@ class _LessonViewerPageState extends ConsumerState<LessonViewerPage> {
     final theme = Theme.of(context);
     final currentUser = ref.watch(firebaseAuthProvider).currentUser;
 
-    // Load lessons list to find specific lesson entity details
+    // Load active course/lesson to set state reactively
+    final courseAsync = ref.watch(courseDetailsProvider(widget.courseId));
     final lessonsAsync = ref.watch(lessonsListProvider(widget.moduleId));
+
+    // Update active learning context reactively
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (courseAsync.hasValue && courseAsync.value != null) {
+        if (ref.read(currentCourseStateProvider) != courseAsync.value) {
+          ref.read(currentCourseStateProvider.notifier).state = courseAsync.value;
+        }
+      }
+      if (lessonsAsync.hasValue) {
+        final lessons = lessonsAsync.value!;
+        final lessonIndex = lessons.indexWhere((l) => l.id == widget.lessonId);
+        if (lessonIndex != -1) {
+          final lesson = lessons[lessonIndex];
+          if (ref.read(currentLessonStateProvider) != lesson) {
+            ref.read(currentLessonStateProvider.notifier).state = lesson;
+          }
+        }
+      }
+    });
 
     return Scaffold(
       appBar: AppBar(
