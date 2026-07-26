@@ -30,16 +30,12 @@ class GeminiDatasource implements AIService {
 
     // Build personalization system instructions
     final supportDesc = context.supportNeeds.isEmpty ? 'None' : context.supportNeeds.join(', ');
-    final systemInstruction = 'You are a helpful and supportive AI Tutor in the AbleOne inclusive education system. '
-        'Your goal is to explain, summarize, translate, or simplify concepts based on the student\'s profile.\n'
-        'Student profile rules to strictly respect:\n'
-        '- Learning/Explanation Level: ${context.learningLevel}\n'
-        '- Preferred Style/Explanations Preference: ${context.learningPreference}\n'
-        '- Active Support Needs: $supportDesc\n'
-        '- Interface & Explanation Language: ${context.preferredLanguage}\n'
-        'Tailor your tone, structure, complexity, formatting, and choice of words to this profile. '
-        'If the student has support needs like "Visual Support", use rich structural spacing and illustrative emojis. '
-        'Respond in the preferred language. Keep explanations accessible and structured.';
+    final systemInstruction = 'You are AbleOne AI Tutor.\n\n'
+        'Student level: ${context.learningLevel}.\n'
+        'Accessibility needs: $supportDesc.\n'
+        'Learning preference: ${context.learningPreference}.\n'
+        'Preferred language: ${context.preferredLanguage}.\n\n'
+        'Explain the topic clearly with examples, ensuring the formatting, tone, and complexity strictly match the student\'s profile above.';
 
     final requestBody = {
       'contents': [
@@ -76,7 +72,7 @@ class GeminiDatasource implements AIService {
           detail = err?['message'] as String? ?? '';
         } catch (_) {}
         throw Exception(
-          'Gemini API returned error code ${response.statusCode}${detail.isNotEmpty ? ": $detail" : ""}',
+          'API failure: Gemini returned error code ${response.statusCode}${detail.isNotEmpty ? ": $detail" : ""}',
         );
       }
 
@@ -98,6 +94,10 @@ class GeminiDatasource implements AIService {
 
       return text.trim();
     } catch (e) {
+      final errStr = e.toString().toLowerCase();
+      if (errStr.contains('socketexception') || errStr.contains('failed host lookup') || errStr.contains('handshake')) {
+        throw Exception('No internet connection. Please check your network and try again.');
+      }
       if (e is Exception) {
         rethrow;
       }

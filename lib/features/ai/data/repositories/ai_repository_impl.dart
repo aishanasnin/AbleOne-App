@@ -8,16 +8,15 @@ import 'package:ableone_app/features/ai/domain/services/ai_service.dart';
 import 'package:ableone_app/features/ai/data/datasources/fake_ai_data_source.dart';
 import 'package:ableone_app/features/ai/data/datasources/gemini_datasource.dart';
 import 'package:ableone_app/features/ai/data/models/ai_message_model.dart';
-import 'package:ableone_app/features/ai/data/repositories/gemini_repository_impl.dart';
 import 'package:ableone_app/features/ai/presentation/providers/ai_providers.dart';
 
-/// Implementation of [AIRepository] using [FakeAIDataSource] and Hive for local storage.
+/// Implementation of [AIRepository] using Hive local storage and [AIService] abstraction.
 class AIRepositoryImpl implements AIRepository {
-  final FakeAIDataSource _dataSource;
+  final AIService _aiService;
   final String _boxName = 'ai_chat_history';
 
   /// Creates a [AIRepositoryImpl] instance.
-  AIRepositoryImpl(this._dataSource);
+  AIRepositoryImpl(this._aiService);
 
   Future<Box<dynamic>> _openBox() async {
     if (Hive.isBoxOpen(_boxName)) {
@@ -42,22 +41,39 @@ class AIRepositoryImpl implements AIRepository {
   }
 
   @override
-  Future<AIMessageEntity> sendMessage(String message, AIUserContext context) async {
+  Future<AIMessageEntity> sendMessage(String message, AIUserContext context, {bool useFallback = false}) async {
     try {
       final box = await _openBox();
       const uuid = Uuid();
 
-      // Create and save user message
-      final userMessage = AIMessageModel(
-        id: uuid.v4(),
-        role: 'user',
-        message: message,
-        timestamp: DateTime.now(),
-      );
-      await box.put(userMessage.id, userMessage.toMap());
+      // Check if user message already exists in local storage (e.g. from previous failed attempt)
+      bool userMessageExists = false;
+      if (box.isNotEmpty) {
+        final lastVal = box.values.last;
+        if (lastVal != null) {
+          final lastModel = AIMessageModel.fromMap(Map<String, dynamic>.from(lastVal as Map));
+          if (lastModel.role == 'user' && lastModel.message == message) {
+            userMessageExists = true;
+          }
+        }
+      }
 
-      // Fetch simulated response
-      final responseText = await _dataSource.getAIResponse(message, context);
+      if (!userMessageExists) {
+        final userMessage = AIMessageModel(
+          id: uuid.v4(),
+          role: 'user',
+          message: message,
+          timestamp: DateTime.now(),
+        );
+        await box.put(userMessage.id, userMessage.toMap());
+      }
+
+      String responseText = '';
+      if (useFallback) {
+        responseText = await FakeAIDataSource().getAIResponse(message, context);
+      } else {
+        responseText = await _aiService.generateResponse(message, context);
+      }
 
       // Create and save AI response
       final assistantMessage = AIMessageModel(
@@ -70,7 +86,7 @@ class AIRepositoryImpl implements AIRepository {
 
       return assistantMessage;
     } catch (e) {
-      throw Exception('Failed to complete AI tutor query: ${e.toString()}');
+      throw Exception(e.toString().replaceAll('Exception: ', ''));
     }
   }
 
@@ -100,7 +116,7 @@ final geminiDatasourceProvider = Provider<AIService>((ref) {
 /// Provider exposing the [AIRepository] instance.
 final aiRepositoryProvider = Provider<AIRepository>((ref) {
   final aiService = ref.watch(geminiDatasourceProvider);
-  return GeminiRepositoryImpl(aiService);
+  return AIRepositoryImpl(aiService);
 });
 
 /// StateProvider tracking the active typing indicator state.
@@ -179,6 +195,30 @@ class ChatMessagesNotifier extends StateNotifier<List<AIMessageEntity>> {
 
     try {
       final assistantMessage = await _repository.sendMessage(prompt, context);
+      state = [...state, assistantMessage];
+    } catch (e) {
+      final errorMsg = e.toString().replaceAll('Exception: ', '');
+      _ref.read(aiChatErrorProvider.notifier).state = errorMsg;
+    } finally {
+      _ref.read(aiTypingProvider.notifier).state = false;
+    }
+  }
+
+  /// Uses FakeAIDataSource mock as a fallback.
+  Future<void> useFallbackMock() async {
+    final prompt = _lastPrompt;
+    if (prompt == null || prompt.trim().isEmpty) return;
+
+    // Reset error
+    _ref.read(aiChatErrorProvider.notifier).state = null;
+
+    // Trigger typing indicator
+    _ref.read(aiTypingProvider.notifier).state = true;
+
+    final context = _ref.read(aiUserContextProvider);
+
+    try {
+      final assistantMessage = await _repository.sendMessage(prompt, context, useFallback: true);
       state = [...state, assistantMessage];
     } catch (e) {
       final errorMsg = e.toString().replaceAll('Exception: ', '');

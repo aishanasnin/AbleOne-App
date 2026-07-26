@@ -157,14 +157,22 @@ class _AIChatPageState extends ConsumerState<AIChatPage> {
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Icon(Icons.error_outline_rounded, color: AppColors.error, size: 20),
+                        Icon(
+                          chatError.toLowerCase().contains('internet')
+                              ? Icons.wifi_off_rounded
+                              : Icons.error_outline_rounded,
+                          color: AppColors.error,
+                          size: 22,
+                        ),
                         const SizedBox(width: AppConstants.sm),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'AI Tutor Error',
+                                chatError.toLowerCase().contains('internet')
+                                    ? 'Connection Lost'
+                                    : 'AI Tutor Error',
                                 style: theme.textTheme.titleSmall?.copyWith(
                                   color: AppColors.error,
                                   fontWeight: FontWeight.bold,
@@ -189,14 +197,31 @@ class _AIChatPageState extends ConsumerState<AIChatPage> {
                       children: [
                         TextButton.icon(
                           onPressed: () {
+                            ref.read(chatMessagesProvider.notifier).useFallbackMock();
+                          },
+                          icon: const Icon(Icons.psychology_outlined, size: 16),
+                          label: const Text('Use Local Fallback'),
+                          style: TextButton.styleFrom(
+                            foregroundColor: AppColors.textSecondary,
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            backgroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(AppConstants.radiusMd),
+                              side: const BorderSide(color: AppColors.border),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: AppConstants.sm),
+                        TextButton.icon(
+                          onPressed: () {
                             ref.read(chatMessagesProvider.notifier).retryLastMessage();
                           },
                           icon: const Icon(Icons.refresh_rounded, size: 16),
                           label: const Text('Try Again'),
                           style: TextButton.styleFrom(
-                            foregroundColor: AppColors.error,
+                            foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                            backgroundColor: Colors.white,
+                            backgroundColor: AppColors.error,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(AppConstants.radiusMd),
                             ),

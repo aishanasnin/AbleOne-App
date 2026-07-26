@@ -7,7 +7,7 @@ abstract class AIRepository {
   Future<List<AIMessageEntity>> getChatHistory();
 
   /// Sends a prompt to the AI engine, saves both user input and output to history, and returns the response.
-  Future<AIMessageEntity> sendMessage(String message, AIUserContext context);
+  Future<AIMessageEntity> sendMessage(String message, AIUserContext context, {bool useFallback = false});
 
   /// Clears all local chat logs.
   Future<void> clearHistory();
