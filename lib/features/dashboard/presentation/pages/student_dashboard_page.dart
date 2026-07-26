@@ -5,16 +5,18 @@ import 'package:ableone_app/core/theme/app_colors.dart';
 import 'package:ableone_app/core/router/route_names.dart';
 import 'package:ableone_app/core/constants/app_constants.dart';
 import 'package:ableone_app/shared/widgets/dashboard_card.dart';
-import 'package:ableone_app/shared/widgets/stat_card.dart';
 import 'package:ableone_app/shared/widgets/section_title.dart';
 import 'package:ableone_app/features/authentication/data/repositories/authentication_repository_impl.dart';
 import 'package:ableone_app/features/learning/data/repositories/course_repository_impl.dart';
 import 'package:ableone_app/features/learning/domain/entities/course_entity.dart';
 import 'package:ableone_app/core/services/firebase_service.dart';
 import 'package:ableone_app/features/profile/presentation/providers/profile_providers.dart';
-import 'package:ableone_app/shared/widgets/premium_widgets.dart';
 import 'package:ableone_app/features/communication/presentation/pages/notification_center_page.dart';
 import 'package:ableone_app/features/communication/presentation/pages/conversation_list_page.dart';
+import 'package:ableone_app/features/gamification/data/repositories/gamification_repository_impl.dart';
+import 'package:ableone_app/features/gamification/presentation/widgets/gamification_widgets.dart';
+import 'package:ableone_app/features/personalization/presentation/pages/ai_study_planner_page.dart';
+import 'package:ableone_app/features/personalization/presentation/pages/learning_insights_page.dart';
 
 /// The main dashboard screen for student users, featuring quick access tabs
 /// for course overview, lesson paths, therapy schedules, and user preference profiles.
@@ -124,235 +126,161 @@ class _StudentDashboardPageState extends ConsumerState<StudentDashboardPage> {
   }
 
   Widget _buildHomeTab(ThemeData theme, bool isDesktop, bool isTablet) {
-    final uid = ref.watch(firebaseAuthProvider).currentUser?.uid;
+    final uid = ref.watch(firebaseAuthProvider).currentUser?.uid ?? 'dummy_user';
 
-    // Load progress for Course 1 as the default "Continue Learning" course
-    final defaultCourseProgressAsync = uid != null
-        ? ref.watch(userProgressProvider(ProgressParam(uid: uid, courseId: 'c1')))
-        : const AsyncValue<dynamic>.loading();
-
+    final xpAsync = ref.watch(xpStatsProvider(uid));
+    final streakAsync = ref.watch(streakProvider(uid));
+    final badgesAsync = ref.watch(badgesProvider(uid));
     final coursesAsync = ref.watch(coursesListProvider);
     final profile = ref.watch(userProfileProvider);
     final greetingName = profile?.name ?? ref.watch(firebaseAuthProvider).currentUser?.displayName ?? 'Student';
 
-    int streak = 0;
-    if (uid != null) {
-      final progressAsync = ref.watch(userProgressProvider(ProgressParam(uid: uid, courseId: 'c1')));
-      progressAsync.whenData((progress) {
-        if (progress != null) {
-          streak = progress.streak;
-        }
-      });
-    }
-
     return ListView(
       padding: const EdgeInsets.all(AppConstants.lg),
       children: [
-        // Welcome Header & Streak Section
-        ProfileHeader(
-          name: greetingName,
-          description: 'Level: ${profile?.learningLevel ?? 'Beginner'} • style: ${profile?.learningPreference ?? 'Simple explanations'}',
-          streakDays: streak,
+        // Personalized Greeting Header
+        Container(
+          padding: const EdgeInsets.all(AppConstants.md),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [AppColors.primary, AppColors.primaryLight],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(AppConstants.radiusLg),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Welcome Back, $greetingName! 👋',
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'Ready to achieve your daily targets and earn extra XP today?',
+                style: TextStyle(color: Colors.white.withValues(alpha: 0.9), fontSize: 13),
+              ),
+            ],
+          ),
         ),
         const SizedBox(height: AppConstants.md),
 
-        // ACTIVE LEARNING MODE
-        const SectionTitle(title: 'Active Learning Mode'),
-        const SizedBox(height: AppConstants.sm),
-        AnimatedButton(
-          onPressed: () {
-            context.push(RouteNames.profilePagePath);
-          },
-          child: GlassCard(
-            color: AppColors.secondary.withValues(alpha: 0.05),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    const Icon(Icons.accessibility_new_rounded, color: AppColors.secondary, size: 24),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'Personalized Profile Settings',
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: AppConstants.xs),
-                Text(
-                  'Level: ${profile?.learningLevel ?? 'Beginner'} • Style: ${profile?.learningPreference ?? 'Simple explanations'}',
-                  style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
-                ),
-                const SizedBox(height: AppConstants.sm),
-                Wrap(
-                  spacing: AppConstants.sm,
-                  runSpacing: AppConstants.xs,
-                  children: (profile?.supportNeeds ?? const []).isEmpty
-                      ? [
-                          Chip(
-                            label: const Text('No specific support needs', style: TextStyle(fontSize: 12)),
-                            avatar: const Icon(Icons.check_circle_outline_rounded, size: 14, color: AppColors.secondary),
-                            backgroundColor: AppColors.secondary.withValues(alpha: 0.05),
-                            side: BorderSide.none,
-                          )
-                        ]
-                      : (profile?.supportNeeds ?? const []).map((need) {
-                          return Chip(
-                            label: Text(need, style: const TextStyle(fontSize: 12)),
-                            avatar: Icon(_getSupportIcon(need), size: 14, color: AppColors.secondary),
-                            backgroundColor: AppColors.secondary.withValues(alpha: 0.05),
-                            side: BorderSide.none,
-                          );
-                        }).toList(),
-                ),
-              ],
-            ),
+        // Streaks & Level Indicators
+        xpAsync.when(
+          data: (xp) => Padding(
+            padding: const EdgeInsets.only(bottom: AppConstants.md),
+            child: XPBar(xp: xp),
           ),
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (err, _) => const SizedBox(),
         ),
-        const SizedBox(height: AppConstants.lg),
 
-        // RECOMMENDED ACTIONS
-        const SectionTitle(title: 'Recommended Actions'),
-        const SizedBox(height: AppConstants.sm),
-        if (profile == null || profile.supportNeeds.isEmpty)
-          DashboardCard(
-            title: 'Complete Accessibility Setup',
-            subtitle: 'Configure your personalized support needs and learning level for a tailored experience.',
-            icon: Icons.settings_accessibility_rounded,
-            color: AppColors.error,
-            onTap: () {
-              context.push(RouteNames.accessibilitySetupPath, extra: profile?.supportNeeds ?? const []);
-            },
+        streakAsync.when(
+          data: (streakVal) => Padding(
+            padding: const EdgeInsets.only(bottom: AppConstants.md),
+            child: StreakCard(streak: streakVal),
           ),
-        DashboardCard(
-          title: 'Start AI Tutor Session',
-          subtitle: 'Learn with custom explanations in "${profile?.learningPreference ?? 'Simple explanations'}" style.',
-          icon: Icons.chat_bubble_outline_rounded,
-          color: AppColors.primary,
-          onTap: () {
-            context.push(RouteNames.aiHomePath);
-          },
+          loading: () => const SizedBox(),
+          error: (err, _) => const SizedBox(),
         ),
-        DashboardCard(
-          title: 'Perform Daily Focus Exercises',
-          subtitle: 'Access therapy sessions designed for your cognitive learning profile.',
-          icon: Icons.fitness_center_rounded,
-          color: AppColors.secondary,
-          onTap: () {
-            setState(() {
-              _currentIndex = 2; // Swap to Therapy Tab
-            });
-          },
+
+        // DAILY GOALS CHECKLIST
+        const SectionTitle(title: "Today's Daily Goals"),
+        const SizedBox(height: AppConstants.sm),
+        Card(
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppConstants.radiusLg),
+            side: const BorderSide(color: AppColors.border),
+          ),
+          child: Column(
+            children: [
+              ListTile(
+                leading: const Icon(Icons.check_circle_outline_rounded, color: AppColors.primary),
+                title: const Text('Complete 1 Sight Word Lesson', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                subtitle: const Text('+10 XP • Target Goal'),
+                trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 12),
+                onTap: () {
+                  context.push(
+                    RouteNames.lessonViewerPath
+                        .replaceAll(':courseId', 'c1')
+                        .replaceAll(':moduleId', 'c1_m1')
+                        .replaceAll(':lessonId', 'c1_m1_l1'),
+                  );
+                },
+              ),
+              const Divider(height: 1),
+              ListTile(
+                leading: const Icon(Icons.check_circle_outline_rounded, color: AppColors.secondary),
+                title: const Text('Consult the AI Tutor', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                subtitle: const Text('+15 XP • Practice Goal'),
+                trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 12),
+                onTap: () => context.push(RouteNames.aiHomePath),
+              ),
+              const Divider(height: 1),
+              ListTile(
+                leading: const Icon(Icons.calendar_month_rounded, color: AppColors.primary),
+                title: const Text('Open AI Daily Planner', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                subtitle: const Text('View and manage your weekly schedule'),
+                trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 12),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute<void>(
+                      builder: (context) => const AIStudyPlannerPage(),
+                    ),
+                  );
+                },
+              ),
+              const Divider(height: 1),
+              ListTile(
+                leading: const Icon(Icons.lightbulb_rounded, color: Colors.amber),
+                title: const Text('View Learning Insights', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                subtitle: const Text('Cognitive strengths, weaknesses & Gemini hints'),
+                trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 12),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute<void>(
+                      builder: (context) => const LearningInsightsPage(),
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
         ),
         const SizedBox(height: AppConstants.lg),
 
         // CONTINUE LEARNING
         const SectionTitle(title: 'Continue Learning'),
         const SizedBox(height: AppConstants.sm),
-        defaultCourseProgressAsync.maybeWhen(
-          data: (progress) {
-            final percent = progress?.completionPercentage ?? 0.0;
-            return AnimatedButton(
-              onPressed: () {
-                context.push(RouteNames.courseDetailsPath.replaceAll(':courseId', 'c1'));
-              },
-              child: GradientCard(
-                colors: const [AppColors.primary, AppColors.primaryLight],
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Introduction to Sight Words',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Module 1 • ${percent.toInt()}% Complete',
-                            style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.9),
-                              fontSize: 13,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    ProgressRing(
-                      value: percent / 100.0,
-                      size: 54,
-                      strokeWidth: 4,
-                      color: Colors.white,
-                    ),
-                  ],
-                ),
+        SizedBox(
+          height: 130,
+          child: ListView(
+            scrollDirection: Axis.horizontal,
+            children: [
+              CourseProgressCard(
+                title: 'Introduction to Sight Words',
+                progress: 80,
+                onTap: () {
+                  context.push(RouteNames.courseDetailsPath.replaceAll(':courseId', 'c1'));
+                },
               ),
-            );
-          },
-          orElse: () => DashboardCard(
-            title: 'Introduction to Sight Words',
-            subtitle: 'Start your learning journey now!',
-            icon: Icons.play_arrow_rounded,
-            color: AppColors.primary,
-            onTap: () {
-              context.push(RouteNames.courseDetailsPath.replaceAll(':courseId', 'c1'));
-            },
+              CourseProgressCard(
+                title: 'Visual Cognitive Counting',
+                progress: 45,
+                onTap: () {
+                  context.push(RouteNames.courseDetailsPath.replaceAll(':courseId', 'c2'));
+                },
+              ),
+            ],
           ),
         ),
-        const SizedBox(height: AppConstants.lg),
-
-        // TODAY'S TASKS
-        const SectionTitle(title: "Today's Tasks"),
-        const SizedBox(height: AppConstants.sm),
-        DashboardCard(
-          title: 'Learn Vowels & Phonetic Sounds',
-          subtitle: 'Daily Attentiveness Task • 10 mins remaining',
-          icon: Icons.task_alt_rounded,
-          color: AppColors.secondary,
-          onTap: () {
-            context.push(
-              RouteNames.lessonViewerPath
-                  .replaceAll(':courseId', 'c1')
-                  .replaceAll(':moduleId', 'c1_m1')
-                  .replaceAll(':lessonId', 'c1_m1_l2'),
-            );
-          },
-        ),
-        const SizedBox(height: AppConstants.lg),
-
-        // AI TUTOR SHORTCUT
-        const SectionTitle(title: 'AI Tutor'),
-        const SizedBox(height: AppConstants.sm),
-        DashboardCard(
-          title: 'Consult AI Tutor Assistant',
-          subtitle: 'Ask questions, simplify lessons, or run quick quizzes',
-          icon: Icons.smart_toy_outlined,
-          color: AppColors.accent,
-          onTap: () {
-            context.push(RouteNames.aiHomePath);
-          },
-        ),
-        const SizedBox(height: AppConstants.lg),
-
-        // PROGRESS SUMMARY
-        SectionTitle(
-          title: 'My Progress Stats',
-          actionText: 'View Details',
-          onActionPressed: () => context.push(RouteNames.progressScreenPath),
-        ),
-        const SizedBox(height: AppConstants.sm),
-        _buildProgressOverview(ref, uid, isDesktop, isTablet),
         const SizedBox(height: AppConstants.lg),
 
         // RECOMMENDED COURSES
@@ -365,81 +293,28 @@ class _StudentDashboardPageState extends ConsumerState<StudentDashboardPage> {
         _buildRecommendedCourses(coursesAsync, ref, uid, isDesktop, isTablet, theme),
         const SizedBox(height: AppConstants.lg),
 
-        // RECENT LESSONS
-        const SectionTitle(title: 'Recent Lessons'),
+        // UNLOCKED ACHIEVEMENTS
+        const SectionTitle(title: 'My Achievements'),
         const SizedBox(height: AppConstants.sm),
-        Column(
-          children: [
-            ListTile(
-              leading: const Icon(Icons.description_outlined, color: AppColors.primary),
-              title: const Text('What are Sight Words?'),
-              subtitle: const Text('Text Lesson • Course 1'),
-              trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14),
-              onTap: () {
-                context.push(
-                  RouteNames.lessonViewerPath
-                      .replaceAll(':courseId', 'c1')
-                      .replaceAll(':moduleId', 'c1_m1')
-                      .replaceAll(':lessonId', 'c1_m1_l1'),
-                );
+        badgesAsync.when(
+          data: (badges) {
+            return GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: isDesktop ? 2 : (isTablet ? 2 : 1),
+                crossAxisSpacing: AppConstants.md,
+                mainAxisSpacing: AppConstants.md,
+                childAspectRatio: 3.5,
+              ),
+              itemCount: badges.length,
+              itemBuilder: (context, index) {
+                return AchievementCard(badge: badges[index]);
               },
-            ),
-            const Divider(),
-            ListTile(
-              leading: const Icon(Icons.play_circle_outline_rounded, color: AppColors.primary),
-              title: const Text('Common Sight Words Video Guide'),
-              subtitle: const Text('Video Lesson • Course 1'),
-              trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14),
-              onTap: () {
-                context.push(
-                  RouteNames.lessonViewerPath
-                      .replaceAll(':courseId', 'c1')
-                      .replaceAll(':moduleId', 'c1_m1')
-                      .replaceAll(':lessonId', 'c1_m1_l2'),
-                );
-              },
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildProgressOverview(WidgetRef ref, String? uid, bool isDesktop, bool isTablet) {
-    int totalXp = 0;
-    int streak = 0;
-
-    if (uid != null) {
-      final progressAsync = ref.watch(userProgressProvider(ProgressParam(uid: uid, courseId: 'c1')));
-      progressAsync.whenData((progress) {
-        if (progress != null) {
-          totalXp = progress.xp;
-          streak = progress.streak;
-        }
-      });
-    }
-
-    final cols = isDesktop ? 2 : 2;
-
-    return GridView.count(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      crossAxisCount: cols,
-      crossAxisSpacing: AppConstants.md,
-      mainAxisSpacing: AppConstants.md,
-      childAspectRatio: 1.6,
-      children: [
-        StatCard(
-          icon: Icons.local_fire_department_rounded,
-          color: Colors.orange,
-          value: '$streak Days',
-          label: 'Daily Streak',
-        ),
-        StatCard(
-          icon: Icons.stars_rounded,
-          color: Colors.amber,
-          value: '$totalXp XP',
-          label: 'Experience Points',
+            );
+          },
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (err, _) => Center(child: Text('Error loading achievements: $err')),
         ),
       ],
     );
@@ -742,26 +617,5 @@ class _StudentDashboardPageState extends ConsumerState<StudentDashboardPage> {
         ],
       ),
     );
-  }
-
-  IconData _getSupportIcon(String need) {
-    switch (need.toLowerCase()) {
-      case 'visual support':
-        return Icons.visibility_rounded;
-      case 'hearing support':
-        return Icons.hearing_rounded;
-      case 'speech support':
-        return Icons.record_voice_over_rounded;
-      case 'physical support':
-        return Icons.accessible_rounded;
-      case 'learning support':
-        return Icons.menu_book_rounded;
-      case 'autism / neurodivergent support':
-        return Icons.psychology_rounded;
-      case 'multiple support needs':
-        return Icons.dynamic_feed_rounded;
-      default:
-        return Icons.accessibility_new_rounded;
-    }
   }
 }
