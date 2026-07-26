@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
 import 'package:uuid/uuid.dart';
@@ -9,14 +11,17 @@ import 'package:ableone_app/features/ai/data/datasources/fake_ai_data_source.dar
 import 'package:ableone_app/features/ai/data/datasources/gemini_datasource.dart';
 import 'package:ableone_app/features/ai/data/models/ai_message_model.dart';
 import 'package:ableone_app/features/ai/presentation/providers/ai_providers.dart';
+import 'package:ableone_app/core/services/firebase_service.dart';
 
-/// Implementation of [AIRepository] using Hive local storage and [AIService] abstraction.
+/// Implementation of [AIRepository] using Hive local storage and Cloud Firestore.
 class AIRepositoryImpl implements AIRepository {
   final AIService _aiService;
+  final FirebaseAuth _firebaseAuth;
+  final FirebaseFirestore _firestore;
   final String _boxName = 'ai_chat_history';
 
   /// Creates a [AIRepositoryImpl] instance.
-  AIRepositoryImpl(this._aiService);
+  AIRepositoryImpl(this._aiService, this._firebaseAuth, this._firestore);
 
   Future<Box<dynamic>> _openBox() async {
     if (Hive.isBoxOpen(_boxName)) {
@@ -25,14 +30,39 @@ class AIRepositoryImpl implements AIRepository {
     return await Hive.openBox(_boxName);
   }
 
+  CollectionReference<Map<String, dynamic>> get _historyCollection =>
+      _firestore.collection('ai_history');
+
   @override
   Future<List<AIMessageEntity>> getChatHistory() async {
     try {
+      final uid = _firebaseAuth.currentUser?.uid;
+      if (uid != null) {
+        final snapshot = await _historyCollection
+            .where('userId', isEqualTo: uid)
+            .get();
+
+        final messages = snapshot.docs.map((doc) {
+          final data = doc.data();
+          final timestamp = data['timestamp'] as Timestamp?;
+          return AIMessageEntity(
+            id: doc.id,
+            role: data['role'] as String? ?? 'user',
+            message: data['message'] as String? ?? '',
+            timestamp: timestamp?.toDate() ?? DateTime.now(),
+          );
+        }).toList();
+
+        // Sort chronologically
+        messages.sort((a, b) => a.timestamp.compareTo(b.timestamp));
+        return messages;
+      }
+
+      // Fallback to local Hive storage if user is not signed in
       final box = await _openBox();
       final messages = box.values
           .map((item) => AIMessageModel.fromMap(Map<String, dynamic>.from(item as Map)))
           .toList();
-      // Sort messages chronologically by timestamp
       messages.sort((a, b) => a.timestamp.compareTo(b.timestamp));
       return messages;
     } catch (e) {
@@ -43,31 +73,32 @@ class AIRepositoryImpl implements AIRepository {
   @override
   Future<AIMessageEntity> sendMessage(String message, AIContextEntity context, {bool useFallback = false}) async {
     try {
+      final uid = _firebaseAuth.currentUser?.uid;
       final box = await _openBox();
       const uuid = Uuid();
+      final messageId = uuid.v4();
+      final now = DateTime.now();
 
-      // Check if user message already exists in local storage (e.g. from previous failed attempt)
-      bool userMessageExists = false;
-      if (box.isNotEmpty) {
-        final lastVal = box.values.last;
-        if (lastVal != null) {
-          final lastModel = AIMessageModel.fromMap(Map<String, dynamic>.from(lastVal as Map));
-          if (lastModel.role == 'user' && lastModel.message == message) {
-            userMessageExists = true;
-          }
-        }
+      // 1. Save user message locally
+      final userMessage = AIMessageModel(
+        id: messageId,
+        role: 'user',
+        message: message,
+        timestamp: now,
+      );
+      await box.put(userMessage.id, userMessage.toMap());
+
+      // 2. Save user message to Firestore
+      if (uid != null) {
+        await _historyCollection.doc(messageId).set({
+          'userId': uid,
+          'role': 'user',
+          'message': message,
+          'timestamp': Timestamp.fromDate(now),
+        });
       }
 
-      if (!userMessageExists) {
-        final userMessage = AIMessageModel(
-          id: uuid.v4(),
-          role: 'user',
-          message: message,
-          timestamp: DateTime.now(),
-        );
-        await box.put(userMessage.id, userMessage.toMap());
-      }
-
+      // 3. Generate response
       String responseText = '';
       if (useFallback) {
         responseText = await FakeAIDataSource().getAIResponse(message, context);
@@ -75,14 +106,27 @@ class AIRepositoryImpl implements AIRepository {
         responseText = await _aiService.generateResponse(message, context);
       }
 
-      // Create and save AI response
+      final assistantMessageId = uuid.v4();
+      final assistantNow = DateTime.now();
+
+      // 4. Save AI response locally
       final assistantMessage = AIMessageModel(
-        id: uuid.v4(),
+        id: assistantMessageId,
         role: 'assistant',
         message: responseText,
-        timestamp: DateTime.now(),
+        timestamp: assistantNow,
       );
       await box.put(assistantMessage.id, assistantMessage.toMap());
+
+      // 5. Save AI response to Firestore
+      if (uid != null) {
+        await _historyCollection.doc(assistantMessageId).set({
+          'userId': uid,
+          'role': 'assistant',
+          'message': responseText,
+          'timestamp': Timestamp.fromDate(assistantNow),
+        });
+      }
 
       return assistantMessage;
     } catch (e) {
@@ -93,50 +137,109 @@ class AIRepositoryImpl implements AIRepository {
   @override
   Future<void> clearHistory() async {
     try {
+      final uid = _firebaseAuth.currentUser?.uid;
       final box = await _openBox();
       await box.clear();
+
+      if (uid != null) {
+        final snapshot = await _historyCollection
+            .where('userId', isEqualTo: uid)
+            .get();
+
+        final batch = _firestore.batch();
+        for (final doc in snapshot.docs) {
+          batch.delete(doc.reference);
+        }
+        await batch.commit();
+      }
     } catch (e) {
       throw Exception('Failed to clear chat logs: ${e.toString()}');
+    }
+  }
+
+  @override
+  Future<String> askQuestion(String question, AIContextEntity context) async {
+    try {
+      return await _aiService.generateResponse('Question: $question', context);
+    } catch (e) {
+      throw Exception('Failed to ask question: ${e.toString()}');
+    }
+  }
+
+  @override
+  Future<String> summarizeLesson(String lessonTitle, String content, AIContextEntity context) async {
+    try {
+      return await _aiService.generateResponse(
+        'Summarize the lesson "$lessonTitle" with the following content:\n\n$content',
+        context,
+      );
+    } catch (e) {
+      throw Exception('Failed to summarize lesson: ${e.toString()}');
+    }
+  }
+
+  @override
+  Future<String> explainTopic(String topic, AIContextEntity context) async {
+    try {
+      return await _aiService.generateResponse('Explain the topic: $topic', context);
+    } catch (e) {
+      throw Exception('Failed to explain topic: ${e.toString()}');
+    }
+  }
+
+  @override
+  Future<String> generateQuiz(String lessonTitle, String content, AIContextEntity context) async {
+    try {
+      return await _aiService.generateResponse(
+        'Create a multiple choice quiz of 3 questions based on the lesson "$lessonTitle" with the following content:\n\n$content',
+        context,
+      );
+    } catch (e) {
+      throw Exception('Failed to generate quiz: ${e.toString()}');
+    }
+  }
+
+  @override
+  Future<String> simplifyText(String text, AIContextEntity context) async {
+    try {
+      return await _aiService.generateResponse(
+        'Simplify the following text and make it easy to understand:\n\n$text',
+        context,
+      );
+    } catch (e) {
+      throw Exception('Failed to simplify text: ${e.toString()}');
     }
   }
 }
 
 // Riverpod Providers
-
-/// Provider exposing the [FakeAIDataSource] instance.
 final fakeAIDataSourceProvider = Provider<FakeAIDataSource>((ref) {
   return FakeAIDataSource();
 });
 
-/// Provider exposing the [AIService] (Gemini) instance.
 final geminiDatasourceProvider = Provider<AIService>((ref) {
   return GeminiDatasource();
 });
 
-/// Provider exposing the [AIRepository] instance.
 final aiRepositoryProvider = Provider<AIRepository>((ref) {
   final aiService = ref.watch(geminiDatasourceProvider);
-  return AIRepositoryImpl(aiService);
+  final firebaseAuth = ref.watch(firebaseAuthProvider);
+  final firestore = ref.watch(firebaseFirestoreProvider);
+  return AIRepositoryImpl(aiService, firebaseAuth, firestore);
 });
 
-/// StateProvider tracking the active typing indicator state.
 final aiTypingProvider = StateProvider<bool>((ref) => false);
-
-/// StateProvider tracking the active chat error state.
 final aiChatErrorProvider = StateProvider<String?>((ref) => null);
 
-/// StateNotifier managing the active chat message list state.
 class ChatMessagesNotifier extends StateNotifier<List<AIMessageEntity>> {
   final AIRepository _repository;
   final Ref _ref;
   String? _lastPrompt;
 
-  /// Creates a [ChatMessagesNotifier] instance.
   ChatMessagesNotifier(this._repository, this._ref) : super([]) {
     loadHistory();
   }
 
-  /// Loads previous messages from local Hive storage.
   Future<void> loadHistory() async {
     try {
       final history = await _repository.getChatHistory();
@@ -146,11 +249,9 @@ class ChatMessagesNotifier extends StateNotifier<List<AIMessageEntity>> {
     }
   }
 
-  /// Sends a new message prompt, updating status states.
   Future<void> sendMessage(String text) async {
     if (text.trim().isEmpty) return;
 
-    // Reset error and track prompt
     _ref.read(aiChatErrorProvider.notifier).state = null;
     _lastPrompt = text;
 
@@ -161,12 +262,8 @@ class ChatMessagesNotifier extends StateNotifier<List<AIMessageEntity>> {
       timestamp: DateTime.now(),
     );
 
-    // Optimistically update list to show user message immediately
     state = [...state, userMessage];
-
-    // Trigger typing indicator
     _ref.read(aiTypingProvider.notifier).state = true;
-
     final context = _ref.read(aiContextProvider);
 
     try {
@@ -180,17 +277,12 @@ class ChatMessagesNotifier extends StateNotifier<List<AIMessageEntity>> {
     }
   }
 
-  /// Retries sending the last failed prompt if it exists.
   Future<void> retryLastMessage() async {
     final prompt = _lastPrompt;
     if (prompt == null || prompt.trim().isEmpty) return;
 
-    // Reset error
     _ref.read(aiChatErrorProvider.notifier).state = null;
-
-    // Trigger typing indicator
     _ref.read(aiTypingProvider.notifier).state = true;
-
     final context = _ref.read(aiContextProvider);
 
     try {
@@ -204,17 +296,12 @@ class ChatMessagesNotifier extends StateNotifier<List<AIMessageEntity>> {
     }
   }
 
-  /// Uses FakeAIDataSource mock as a fallback.
   Future<void> useFallbackMock() async {
     final prompt = _lastPrompt;
     if (prompt == null || prompt.trim().isEmpty) return;
 
-    // Reset error
     _ref.read(aiChatErrorProvider.notifier).state = null;
-
-    // Trigger typing indicator
     _ref.read(aiTypingProvider.notifier).state = true;
-
     final context = _ref.read(aiContextProvider);
 
     try {
@@ -228,7 +315,6 @@ class ChatMessagesNotifier extends StateNotifier<List<AIMessageEntity>> {
     }
   }
 
-  /// Clears chat history.
   Future<void> clearHistory() async {
     await _repository.clearHistory();
     _ref.read(aiChatErrorProvider.notifier).state = null;
@@ -237,7 +323,6 @@ class ChatMessagesNotifier extends StateNotifier<List<AIMessageEntity>> {
   }
 }
 
-/// Provider managing active chat history message arrays.
 final chatMessagesProvider = StateNotifierProvider<ChatMessagesNotifier, List<AIMessageEntity>>((ref) {
   final repo = ref.watch(aiRepositoryProvider);
   return ChatMessagesNotifier(repo, ref);

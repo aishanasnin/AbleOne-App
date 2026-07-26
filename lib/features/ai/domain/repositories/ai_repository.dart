@@ -11,4 +11,11 @@ abstract class AIRepository {
 
   /// Clears all local chat logs.
   Future<void> clearHistory();
+
+  // New specific tutor helper methods
+  Future<String> askQuestion(String question, AIContextEntity context);
+  Future<String> summarizeLesson(String lessonTitle, String content, AIContextEntity context);
+  Future<String> explainTopic(String topic, AIContextEntity context);
+  Future<String> generateQuiz(String lessonTitle, String content, AIContextEntity context);
+  Future<String> simplifyText(String text, AIContextEntity context);
 }
