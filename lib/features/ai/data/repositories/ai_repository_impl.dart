@@ -106,10 +106,14 @@ final aiRepositoryProvider = Provider<AIRepository>((ref) {
 /// StateProvider tracking the active typing indicator state.
 final aiTypingProvider = StateProvider<bool>((ref) => false);
 
+/// StateProvider tracking the active chat error state.
+final aiChatErrorProvider = StateProvider<String?>((ref) => null);
+
 /// StateNotifier managing the active chat message list state.
 class ChatMessagesNotifier extends StateNotifier<List<AIMessageEntity>> {
   final AIRepository _repository;
   final Ref _ref;
+  String? _lastPrompt;
 
   /// Creates a [ChatMessagesNotifier] instance.
   ChatMessagesNotifier(this._repository, this._ref) : super([]) {
@@ -130,6 +134,10 @@ class ChatMessagesNotifier extends StateNotifier<List<AIMessageEntity>> {
   Future<void> sendMessage(String text) async {
     if (text.trim().isEmpty) return;
 
+    // Reset error and track prompt
+    _ref.read(aiChatErrorProvider.notifier).state = null;
+    _lastPrompt = text;
+
     final userMessage = AIMessageEntity(
       id: const Uuid().v4(),
       role: 'user',
@@ -148,15 +156,33 @@ class ChatMessagesNotifier extends StateNotifier<List<AIMessageEntity>> {
     try {
       final assistantMessage = await _repository.sendMessage(text, context);
       state = [...state, assistantMessage];
-    } catch (_) {
-      // Create a warning message bubble if the operation failed
-      final errorMessage = AIMessageEntity(
-        id: const Uuid().v4(),
-        role: 'assistant',
-        message: 'Could not connect to the AI Tutor service. Please check your connection.',
-        timestamp: DateTime.now(),
-      );
-      state = [...state, errorMessage];
+    } catch (e) {
+      final errorMsg = e.toString().replaceAll('Exception: ', '');
+      _ref.read(aiChatErrorProvider.notifier).state = errorMsg;
+    } finally {
+      _ref.read(aiTypingProvider.notifier).state = false;
+    }
+  }
+
+  /// Retries sending the last failed prompt if it exists.
+  Future<void> retryLastMessage() async {
+    final prompt = _lastPrompt;
+    if (prompt == null || prompt.trim().isEmpty) return;
+
+    // Reset error
+    _ref.read(aiChatErrorProvider.notifier).state = null;
+
+    // Trigger typing indicator
+    _ref.read(aiTypingProvider.notifier).state = true;
+
+    final context = _ref.read(aiUserContextProvider);
+
+    try {
+      final assistantMessage = await _repository.sendMessage(prompt, context);
+      state = [...state, assistantMessage];
+    } catch (e) {
+      final errorMsg = e.toString().replaceAll('Exception: ', '');
+      _ref.read(aiChatErrorProvider.notifier).state = errorMsg;
     } finally {
       _ref.read(aiTypingProvider.notifier).state = false;
     }
@@ -165,6 +191,8 @@ class ChatMessagesNotifier extends StateNotifier<List<AIMessageEntity>> {
   /// Clears chat history.
   Future<void> clearHistory() async {
     await _repository.clearHistory();
+    _ref.read(aiChatErrorProvider.notifier).state = null;
+    _lastPrompt = null;
     state = [];
   }
 }

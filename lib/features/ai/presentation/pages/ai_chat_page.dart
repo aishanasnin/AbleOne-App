@@ -62,6 +62,7 @@ class _AIChatPageState extends ConsumerState<AIChatPage> {
     final theme = Theme.of(context);
     final messages = ref.watch(chatMessagesProvider);
     final isTyping = ref.watch(aiTypingProvider);
+    final chatError = ref.watch(aiChatErrorProvider);
 
     // Reactively scroll down whenever messages array updates
     ref.listen<List<AIMessageEntity>>(chatMessagesProvider, (prev, next) {
@@ -71,6 +72,13 @@ class _AIChatPageState extends ConsumerState<AIChatPage> {
     // Also scroll down when typing indicator is toggled
     ref.listen<bool>(aiTypingProvider, (prev, next) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
+    });
+
+    // Also scroll down when error is toggled
+    ref.listen<String?>(aiChatErrorProvider, (prev, next) {
+      if (next != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
+      }
     });
 
     return Scaffold(
@@ -133,6 +141,72 @@ class _AIChatPageState extends ConsumerState<AIChatPage> {
                       },
                     ),
             ),
+
+            if (chatError != null)
+              Container(
+                margin: const EdgeInsets.symmetric(horizontal: AppConstants.lg, vertical: AppConstants.sm),
+                padding: const EdgeInsets.all(AppConstants.md),
+                decoration: BoxDecoration(
+                  color: AppColors.errorLight,
+                  borderRadius: BorderRadius.circular(AppConstants.radiusLg),
+                  border: Border.all(color: AppColors.error.withValues(alpha: 0.3)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(Icons.error_outline_rounded, color: AppColors.error, size: 20),
+                        const SizedBox(width: AppConstants.sm),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'AI Tutor Error',
+                                style: theme.textTheme.titleSmall?.copyWith(
+                                  color: AppColors.error,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                chatError,
+                                style: const TextStyle(
+                                  color: AppColors.error,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: AppConstants.md),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        TextButton.icon(
+                          onPressed: () {
+                            ref.read(chatMessagesProvider.notifier).retryLastMessage();
+                          },
+                          icon: const Icon(Icons.refresh_rounded, size: 16),
+                          label: const Text('Try Again'),
+                          style: TextButton.styleFrom(
+                            foregroundColor: AppColors.error,
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            backgroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(AppConstants.radiusMd),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
 
             // Input controller footer panel
             Container(
