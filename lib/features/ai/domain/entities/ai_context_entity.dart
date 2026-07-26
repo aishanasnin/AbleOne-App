@@ -21,6 +21,18 @@ class AIContextEntity {
   /// The preferred response language.
   final String language;
 
+  /// Toggle for simplified clean descriptions.
+  final bool simpleExplanationsMode;
+
+  /// Toggle for presenting list tasks sequentially.
+  final bool stepByStepMode;
+
+  /// Font scaling preference multiplier.
+  final double textScale;
+
+  /// Speed of narrated voice output.
+  final double readingSpeed;
+
   /// Creates an [AIContextEntity] instance.
   const AIContextEntity({
     required this.userLevel,
@@ -29,5 +41,9 @@ class AIContextEntity {
     this.currentCourse,
     this.currentLesson,
     required this.language,
+    this.simpleExplanationsMode = false,
+    this.stepByStepMode = false,
+    this.textScale = 1.0,
+    this.readingSpeed = 1.0,
   });
 }

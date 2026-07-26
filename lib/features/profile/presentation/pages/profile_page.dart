@@ -11,6 +11,10 @@ import 'package:ableone_app/shared/widgets/primary_button.dart';
 import 'package:ableone_app/features/profile/data/repositories/profile_repository_impl.dart';
 import 'package:ableone_app/core/services/firebase_service.dart';
 import 'package:ableone_app/features/accessibility/presentation/pages/accessibility_controls_page.dart';
+import 'package:ableone_app/features/privacy/presentation/pages/privacy_policy_page.dart';
+import 'package:ableone_app/features/privacy/presentation/pages/data_consent_page.dart';
+import 'package:ableone_app/features/privacy/presentation/pages/data_management_page.dart';
+import 'package:ableone_app/features/privacy/presentation/pages/account_deletion_page.dart';
 
 /// Screen listing a student's active personalization preferences, support needs, and learning options.
 class ProfilePage extends ConsumerWidget {
@@ -159,6 +163,76 @@ class ProfilePage extends ConsumerWidget {
                               ),
                             );
                           },
+                        ),
+                      ),
+                      
+                      const SectionTitle(title: 'Privacy & Data Controls'),
+                      const SizedBox(height: AppConstants.sm),
+                      Card(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(AppConstants.radiusLg),
+                          side: const BorderSide(color: AppColors.border),
+                        ),
+                        elevation: 0,
+                        margin: const EdgeInsets.only(bottom: AppConstants.sm),
+                        child: Column(
+                          children: [
+                            ListTile(
+                              leading: const Icon(Icons.privacy_tip_rounded, color: AppColors.primary),
+                              title: const Text('Privacy Policy', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                              trailing: const Icon(Icons.chevron_right_rounded),
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const PrivacyPolicyPage(),
+                                  ),
+                                );
+                              },
+                            ),
+                            const Divider(height: 1),
+                            ListTile(
+                              leading: const Icon(Icons.security_rounded, color: AppColors.primary),
+                              title: const Text('Data Consent Settings', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                              trailing: const Icon(Icons.chevron_right_rounded),
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const DataConsentPage(),
+                                  ),
+                                );
+                              },
+                            ),
+                            const Divider(height: 1),
+                            ListTile(
+                              leading: const Icon(Icons.storage_rounded, color: AppColors.primary),
+                              title: const Text('Data Management & Export', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                              trailing: const Icon(Icons.chevron_right_rounded),
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const DataManagementPage(),
+                                  ),
+                                );
+                              },
+                            ),
+                            const Divider(height: 1),
+                            ListTile(
+                              leading: const Icon(Icons.delete_forever_rounded, color: AppColors.error),
+                              title: const Text('Delete Account', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                              trailing: const Icon(Icons.chevron_right_rounded),
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const AccountDeletionPage(),
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
                         ),
                       ),
                       const SizedBox(height: AppConstants.xl),

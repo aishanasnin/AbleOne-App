@@ -9,11 +9,11 @@ void main() {
       expect(RouteNames.loginPath, '/login');
       expect(RouteNames.signupPath, '/signup');
       expect(RouteNames.roleSelectionPath, '/role-selection');
-      expect(RouteNames.studentDashboardPath, '/student-dashboard');
-      expect(RouteNames.parentDashboardPath, '/parent-dashboard');
-      expect(RouteNames.counselorDashboardPath, '/counselor-dashboard');
-      expect(RouteNames.adminDashboardPath, '/admin-dashboard');
-      expect(RouteNames.aiHomePath, '/ai-tutor');
+      expect(RouteNames.studentDashboardPath, '/dashboard/student');
+      expect(RouteNames.parentDashboardPath, '/dashboard/parent');
+      expect(RouteNames.counselorDashboardPath, '/dashboard/counselor');
+      expect(RouteNames.adminDashboardPath, '/dashboard/admin');
+      expect(RouteNames.aiHomePath, '/ai');
     });
   });
 }

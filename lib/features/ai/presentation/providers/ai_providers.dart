@@ -3,6 +3,7 @@ import 'package:ableone_app/features/ai/domain/entities/ai_context_entity.dart';
 import 'package:ableone_app/features/learning/domain/entities/course_entity.dart';
 import 'package:ableone_app/features/learning/domain/entities/lesson_entity.dart';
 import 'package:ableone_app/features/profile/data/repositories/profile_repository_impl.dart';
+import 'package:ableone_app/features/accessibility/data/repositories/accessibility_repository_impl.dart';
 
 /// StateProvider tracking the course currently being viewed by the user.
 final currentCourseStateProvider = StateProvider<CourseEntity?>((ref) => null);
@@ -15,6 +16,7 @@ final aiContextProvider = Provider<AIContextEntity>((ref) {
   final profileAsync = ref.watch(userProfileNotifierProvider);
   final currentCourse = ref.watch(currentCourseStateProvider);
   final currentLesson = ref.watch(currentLessonStateProvider);
+  final accessSettings = ref.watch(accessibilitySettingsProvider);
 
   return profileAsync.maybeWhen(
     data: (profile) {
@@ -26,6 +28,10 @@ final aiContextProvider = Provider<AIContextEntity>((ref) {
           currentCourse: currentCourse,
           currentLesson: currentLesson,
           language: profile.preferredLanguage,
+          simpleExplanationsMode: accessSettings.simplifiedMode,
+          stepByStepMode: accessSettings.stepByStepMode,
+          textScale: accessSettings.textScale,
+          readingSpeed: accessSettings.readingSpeed,
         );
       }
       return AIContextEntity(
@@ -35,6 +41,10 @@ final aiContextProvider = Provider<AIContextEntity>((ref) {
         currentCourse: currentCourse,
         currentLesson: currentLesson,
         language: 'English',
+        simpleExplanationsMode: accessSettings.simplifiedMode,
+        stepByStepMode: accessSettings.stepByStepMode,
+        textScale: accessSettings.textScale,
+        readingSpeed: accessSettings.readingSpeed,
       );
     },
     orElse: () => AIContextEntity(
@@ -44,6 +54,10 @@ final aiContextProvider = Provider<AIContextEntity>((ref) {
       currentCourse: currentCourse,
       currentLesson: currentLesson,
       language: 'English',
+      simpleExplanationsMode: accessSettings.simplifiedMode,
+      stepByStepMode: accessSettings.stepByStepMode,
+      textScale: accessSettings.textScale,
+      readingSpeed: accessSettings.readingSpeed,
     ),
   );
 });

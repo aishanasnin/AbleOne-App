@@ -27,9 +27,13 @@ class GeminiApiService {
         'Accessibility needs: $supportDesc.\n'
         'Learning preference: ${context.learningPreference}.\n'
         'Preferred language: ${context.language}.\n\n'
+        'Accessibility Options:\n'
+        '- Simple explanations: ${context.simpleExplanationsMode ? "ENABLED (Explain in extremely basic terms, avoid complex terminology entirely)" : "DISABLED"}\n'
+        '- Step-by-step formatting: ${context.stepByStepMode ? "ENABLED (Format responses as a clear, numbered step-by-step list of instructions, with one action per line)" : "DISABLED"}\n'
+        '- Reading pacing: ${context.readingSpeed}x speed\n\n'
         'Current course: $courseText.\n'
         'Current lesson: $lessonText.\n\n'
-        'Explain using simple examples. Tailor your formatting, structure, and complexity to the student\'s profile above. '
+        'Tailor your formatting, structure, and complexity to the student\'s profile and active accessibility options above. '
         'If a lesson is actively set, prioritize explaining or referencing that topic.';
 
     final requestBody = {

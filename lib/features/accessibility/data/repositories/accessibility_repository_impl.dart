@@ -2,6 +2,7 @@ import 'package:hive/hive.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ableone_app/features/accessibility/domain/entities/accessibility_settings_entity.dart';
 import 'package:ableone_app/features/accessibility/domain/repositories/accessibility_repository.dart';
+import 'package:ableone_app/features/accessibility/data/models/accessibility_model.dart';
 
 /// Hive implementation of [AccessibilityRepository] with StateNotifier for settings preferences.
 class AccessibilityRepositoryImpl implements AccessibilityRepository {
@@ -21,24 +22,26 @@ class AccessibilityRepositoryImpl implements AccessibilityRepository {
       final box = await _openBox();
       final data = box.get(_key);
       if (data != null) {
-        return AccessibilitySettingsEntity.fromMap(Map<String, dynamic>.from(data as Map));
+        return AccessibilityModel.fromMap(Map<String, dynamic>.from(data as Map));
       }
-      return const AccessibilitySettingsEntity(
-        highContrastMode: false,
-        largeTextMode: false,
+      return const AccessibilityModel(
         textScale: 1.0,
+        contrastMode: 'Normal',
         voiceEnabled: false,
         readingSpeed: 1.0,
         simplifiedMode: false,
+        animationEnabled: true,
+        stepByStepMode: false,
       );
     } catch (_) {
-      return const AccessibilitySettingsEntity(
-        highContrastMode: false,
-        largeTextMode: false,
+      return const AccessibilityModel(
         textScale: 1.0,
+        contrastMode: 'Normal',
         voiceEnabled: false,
         readingSpeed: 1.0,
         simplifiedMode: false,
+        animationEnabled: true,
+        stepByStepMode: false,
       );
     }
   }
@@ -47,7 +50,16 @@ class AccessibilityRepositoryImpl implements AccessibilityRepository {
   Future<void> saveSettings(AccessibilitySettingsEntity settings) async {
     try {
       final box = await _openBox();
-      await box.put(_key, settings.toMap());
+      final model = AccessibilityModel(
+        textScale: settings.textScale,
+        contrastMode: settings.contrastMode,
+        voiceEnabled: settings.voiceEnabled,
+        readingSpeed: settings.readingSpeed,
+        simplifiedMode: settings.simplifiedMode,
+        animationEnabled: settings.animationEnabled,
+        stepByStepMode: settings.stepByStepMode,
+      );
+      await box.put(_key, model.toMap());
     } catch (e) {
       throw Exception('Failed to save accessibility settings: ${e.toString()}');
     }
@@ -67,13 +79,14 @@ class AccessibilitySettingsNotifier extends StateNotifier<AccessibilitySettingsE
 
   /// Creates an [AccessibilitySettingsNotifier] instance.
   AccessibilitySettingsNotifier(this._repository)
-      : super(const AccessibilitySettingsEntity(
-          highContrastMode: false,
-          largeTextMode: false,
+      : super(const AccessibilityModel(
           textScale: 1.0,
+          contrastMode: 'Normal',
           voiceEnabled: false,
           readingSpeed: 1.0,
           simplifiedMode: false,
+          animationEnabled: true,
+          stepByStepMode: false,
         )) {
     loadSettings();
   }
@@ -90,19 +103,23 @@ class AccessibilitySettingsNotifier extends StateNotifier<AccessibilitySettingsE
     await _repository.saveSettings(updated);
   }
 
-  /// Toggles high contrast colors.
-  Future<void> toggleHighContrast() async {
-    final updated = state.copyWith(highContrastMode: !state.highContrastMode);
+  /// Sets the contrast theme mode preference.
+  Future<void> setContrastMode(String mode) async {
+    final updated = state.copyWith(contrastMode: mode);
     await updateSettings(updated);
   }
 
-  /// Toggles large text mode.
+  /// Backward compatible toggle helper for high contrast mode.
+  Future<void> toggleHighContrast() async {
+    final nextContrast = state.contrastMode == 'High Contrast' ? 'Normal' : 'High Contrast';
+    await setContrastMode(nextContrast);
+  }
+
+  /// Backward compatible large text toggle helper.
   Future<void> toggleLargeText() async {
-    final updated = state.copyWith(
-      largeTextMode: !state.largeTextMode,
-      textScale: !state.largeTextMode ? 1.3 : 1.0,
-    );
-    await updateSettings(updated);
+    final currentScale = state.textScale;
+    final nextScale = currentScale > 1.1 ? 1.0 : 1.3;
+    await setTextScale(nextScale);
   }
 
   /// Toggles narration audio feedback.
@@ -114,6 +131,18 @@ class AccessibilitySettingsNotifier extends StateNotifier<AccessibilitySettingsE
   /// Toggles simplified clean interface layout.
   Future<void> toggleSimplified() async {
     final updated = state.copyWith(simplifiedMode: !state.simplifiedMode);
+    await updateSettings(updated);
+  }
+
+  /// Toggles UI animation transitions.
+  Future<void> toggleAnimation() async {
+    final updated = state.copyWith(animationEnabled: !state.animationEnabled);
+    await updateSettings(updated);
+  }
+
+  /// Toggles step-by-step presentation format.
+  Future<void> toggleStepByStep() async {
+    final updated = state.copyWith(stepByStepMode: !state.stepByStepMode);
     await updateSettings(updated);
   }
 

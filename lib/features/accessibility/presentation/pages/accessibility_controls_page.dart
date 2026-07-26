@@ -1,131 +1,109 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:ableone_app/core/theme/app_colors.dart';
-import 'package:ableone_app/core/constants/app_constants.dart';
 import 'package:ableone_app/features/accessibility/data/repositories/accessibility_repository_impl.dart';
+import 'package:ableone_app/features/accessibility/presentation/widgets/accessibility_toggle.dart';
+import 'package:ableone_app/features/accessibility/presentation/widgets/accessibility_slider.dart';
+import 'package:ableone_app/features/accessibility/presentation/widgets/accessibility_option_card.dart';
+import 'package:ableone_app/core/constants/app_constants.dart';
+import 'package:ableone_app/shared/widgets/section_title.dart';
 
-/// Settings screen for configuring text scale size, contrast themes, narration support, and speech pace.
+/// Accessibility Settings Dashboard screen featuring Visual Settings, Audio Settings, and Learning Support.
 class AccessibilityControlsPage extends ConsumerWidget {
   /// Creates an [AccessibilityControlsPage] instance.
   const AccessibilityControlsPage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
     final settings = ref.watch(accessibilitySettingsProvider);
     final notifier = ref.read(accessibilitySettingsProvider.notifier);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Accessibility Settings'),
+        title: const Text('Accessibility Dashboard'),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(AppConstants.lg),
-          child: Center(
-            child: Container(
-              constraints: const BoxConstraints(maxWidth: 800),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Semantics(
-                    header: true,
-                    child: Text(
-                      'Accessibility Controls',
-                      style: theme.textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: AppConstants.xs),
-                  const Text(
-                    'Customize display, voice description narration, and layout details to make learning inclusive.',
-                    style: TextStyle(color: AppColors.textSecondary),
-                  ),
-                  const SizedBox(height: AppConstants.lg),
-
-                  // High Contrast Mode Toggle
-                  SwitchListTile(
-                    title: const Text('High Contrast Mode'),
-                    subtitle: const Text('Enhance color readability for text and icons.'),
-                    value: settings.highContrastMode,
-                    onChanged: (value) => notifier.toggleHighContrast(),
-                  ),
-                  const Divider(),
-
-                  // Simplified Interface Mode
-                  SwitchListTile(
-                    title: const Text('Simplified Mode'),
-                    subtitle: const Text('Display basic spacing options with fewer complex widgets.'),
-                    value: settings.simplifiedMode,
-                    onChanged: (value) => notifier.toggleSimplified(),
-                  ),
-                  const Divider(),
-
-                  // Voice Narration Toggle
-                  SwitchListTile(
-                    title: const Text('Voice Narration Support'),
-                    subtitle: const Text('Show narration narrator voice actions on text elements.'),
-                    value: settings.voiceEnabled,
-                    onChanged: (value) => notifier.toggleVoice(),
-                  ),
-                  const Divider(),
-
-                  // Text Scaling Slider
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text('Text Scale Sizing', style: TextStyle(fontWeight: FontWeight.bold)),
-                            Text('${(settings.textScale * 100).toInt()}%'),
-                          ],
-                        ),
-                        Slider(
-                          min: 0.8,
-                          max: 1.8,
-                          divisions: 5,
-                          value: settings.textScale,
-                          onChanged: (val) => notifier.setTextScale(val),
-                          activeColor: AppColors.primary,
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Divider(),
-
-                  // Speech Narration Speed Slider
-                  if (settings.voiceEnabled)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              const Text('Narration Speech Pace', style: TextStyle(fontWeight: FontWeight.bold)),
-                              Text('${settings.readingSpeed}x'),
-                            ],
-                          ),
-                          Slider(
-                            min: 0.8,
-                            max: 2.0,
-                            divisions: 6,
-                            value: settings.readingSpeed,
-                            onChanged: (val) => notifier.setReadingSpeed(val),
-                            activeColor: AppColors.primary,
-                          ),
-                        ],
-                      ),
-                    ),
-                ],
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Visual Settings Section
+              const SectionTitle(title: 'Visual Settings'),
+              const SizedBox(height: AppConstants.sm),
+              AccessibilitySlider(
+                title: 'Text Scale Sizing',
+                label: '${(settings.textScale * 100).toInt()}%',
+                value: settings.textScale,
+                min: 0.8,
+                max: 1.8,
+                divisions: 5,
+                onChanged: (val) => notifier.setTextScale(val),
               ),
-            ),
+              const SizedBox(height: AppConstants.sm),
+              const Text('Contrast Theme Select', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+              const SizedBox(height: AppConstants.xs),
+              AccessibilityOptionCard(
+                title: 'Standard Normal',
+                description: 'Default app color styling matching regular layout colors.',
+                icon: Icons.brightness_medium_rounded,
+                isSelected: settings.contrastMode == 'Normal',
+                onTap: () => notifier.setContrastMode('Normal'),
+              ),
+              const SizedBox(height: 8),
+              AccessibilityOptionCard(
+                title: 'High Contrast Mode',
+                description: 'Enforces pure black-and-white borders and high contrast color keys.',
+                icon: Icons.brightness_high_rounded,
+                isSelected: settings.contrastMode == 'High Contrast',
+                onTap: () => notifier.setContrastMode('High Contrast'),
+              ),
+              const SizedBox(height: AppConstants.lg),
+
+              // Audio Settings Section
+              const SectionTitle(title: 'Audio Settings'),
+              const SizedBox(height: AppConstants.sm),
+              AccessibilityToggle(
+                title: 'Voice Narration Assist',
+                description: 'Enables audio description narration guides on content widgets.',
+                value: settings.voiceEnabled,
+                onChanged: (_) => notifier.toggleVoice(),
+              ),
+              if (settings.voiceEnabled) ...[
+                const SizedBox(height: AppConstants.sm),
+                AccessibilitySlider(
+                  title: 'Narration Speed Pace',
+                  label: '${settings.readingSpeed}x',
+                  value: settings.readingSpeed,
+                  min: 0.8,
+                  max: 2.0,
+                  divisions: 6,
+                  onChanged: (val) => notifier.setReadingSpeed(val),
+                ),
+              ],
+              const SizedBox(height: AppConstants.lg),
+
+              // Learning Support Section
+              const SectionTitle(title: 'Learning Support'),
+              const SizedBox(height: AppConstants.sm),
+              AccessibilityToggle(
+                title: 'Simple Explanation Mode',
+                description: 'Simplifies complex definitions and paragraphs into direct visual terms.',
+                value: settings.simplifiedMode,
+                onChanged: (_) => notifier.toggleSimplified(),
+              ),
+              AccessibilityToggle(
+                title: 'Step-by-Step Task Layout',
+                description: 'Splits guides and lists into numbered step pages instead of large text areas.',
+                value: settings.stepByStepMode,
+                onChanged: (_) => notifier.toggleStepByStep(),
+              ),
+              AccessibilityToggle(
+                title: 'Animation Transitions Enabled',
+                description: 'Enables animations, page transitions, and progress animations.',
+                value: settings.animationEnabled,
+                onChanged: (_) => notifier.toggleAnimation(),
+              ),
+            ],
           ),
         ),
       ),
