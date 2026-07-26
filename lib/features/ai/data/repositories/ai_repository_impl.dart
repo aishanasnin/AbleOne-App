@@ -4,8 +4,11 @@ import 'package:uuid/uuid.dart';
 import 'package:ableone_app/features/ai/domain/entities/ai_message_entity.dart';
 import 'package:ableone_app/features/ai/domain/entities/ai_user_context.dart';
 import 'package:ableone_app/features/ai/domain/repositories/ai_repository.dart';
+import 'package:ableone_app/features/ai/domain/services/ai_service.dart';
 import 'package:ableone_app/features/ai/data/datasources/fake_ai_data_source.dart';
+import 'package:ableone_app/features/ai/data/datasources/gemini_datasource.dart';
 import 'package:ableone_app/features/ai/data/models/ai_message_model.dart';
+import 'package:ableone_app/features/ai/data/repositories/gemini_repository_impl.dart';
 import 'package:ableone_app/features/ai/presentation/providers/ai_providers.dart';
 
 /// Implementation of [AIRepository] using [FakeAIDataSource] and Hive for local storage.
@@ -89,10 +92,15 @@ final fakeAIDataSourceProvider = Provider<FakeAIDataSource>((ref) {
   return FakeAIDataSource();
 });
 
+/// Provider exposing the [AIService] (Gemini) instance.
+final geminiDatasourceProvider = Provider<AIService>((ref) {
+  return GeminiDatasource();
+});
+
 /// Provider exposing the [AIRepository] instance.
 final aiRepositoryProvider = Provider<AIRepository>((ref) {
-  final dataSource = ref.watch(fakeAIDataSourceProvider);
-  return AIRepositoryImpl(dataSource);
+  final aiService = ref.watch(geminiDatasourceProvider);
+  return GeminiRepositoryImpl(aiService);
 });
 
 /// StateProvider tracking the active typing indicator state.
